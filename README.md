@@ -4,6 +4,20 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 
 ---
 
+## Tabla de Contenido
+
+- [Tecnologias](#tecnologias)
+- [Arquitectura](#arquitectura)
+- [Cobertura de Pruebas (JaCoCo)](#cobertura-de-pruebas-jacoco)
+- [Tests](#tests)
+- [Instalacion y Ejecucion Local](#instalacion-y-ejecucion-local)
+- [Endpoints y Ejemplos](#endpoints-y-ejemplos)
+- [Manejo de Errores](#manejo-de-errores)
+- [Despliegue en AWS](#despliegue-en-aws)
+- [Mejoras Propuestas](#mejoras-propuestas)
+
+---
+
 ## Tecnologias
 
 | Tecnologia | Version |
@@ -11,7 +25,7 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 | Java | 21 |
 | Spring Boot | 3.4.1 |
 | Gradle | 8.x |
-| PostgreSQL | 15+ |
+| PostgreSQL | 17 |
 | JPA / Hibernate | - |
 | Flyway | 10.x |
 | OpenAPI | 3.1 |
@@ -54,7 +68,7 @@ La cobertura se evalua sobre el **codigo testable**, excluyendo clases que no co
 
 | Metrica | Resultado | Umbral |
 |---|---|---|
-| Instrucciones (líneas de codigo ejecutado) | **93%** | 85% |
+| Instrucciones (lineas de codigo ejecutado) | **93%** | 85% |
 | Ramas (condiciones if/else, switch) | **86%** | - |
 | Lineas | **95%** | - |
 | Metodos | **96%** | - |
@@ -122,7 +136,7 @@ El proyecto cuenta con **184 tests automatizados** (0 fallos, 0 ignorados, ejecu
 ### Prerrequisitos
 
 - Java 21 (Temurin recomendado)
-- PostgreSQL 15+ corriendo en `localhost:5432`
+- PostgreSQL 15+ corriendo en `localhost:5432` (o via Docker)
 - Docker (opcional, para contenedor local)
 
 ### Pasos
@@ -134,13 +148,15 @@ git clone https://github.com/cristiansrc/ms-medical-appointment.git
 cd ms-medical-appointment
 ```
 
-2. Crear la base de datos PostgreSQL:
+2. Crear la base de datos PostgreSQL (si no existe):
 
-```sql
-CREATE DATABASE medisalud;
+```bash
+createdb ms-medical-appointment
+# O via psql:
+# psql -U postgres -c "CREATE DATABASE \"ms-medical-appointment\""
 ```
 
-3. Configurar credenciales (valores por defecto: `postgres`/`postgres`). Editar `src/main/resources/application-dev.yaml` si es necesario.
+3. Configurar credenciales en `src/main/resources/application-dev.yaml` (valores por defecto: `postgres`/`postgres`).
 
 4. Ejecutar la aplicacion:
 
@@ -148,9 +164,9 @@ CREATE DATABASE medisalud;
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
-5. La API estara disponible en: `http://localhost:8080`
-6. Swagger UI: `http://localhost:8080/swagger-ui.html`
-7. Health check: `http://localhost:8080/actuator/health`
+5. La API estara disponible en: `http://localhost:8081`
+6. Swagger UI: `http://localhost:8081/swagger-ui/index.html`
+7. Health check: `http://localhost:8081/actuator/health`
 
 ### Ejecutar tests
 
@@ -162,12 +178,12 @@ CREATE DATABASE medisalud;
 
 ```bash
 docker build -t ms-medical-appointment .
-docker run -p 8080:8080 --env-file .env ms-medical-appointment
+docker run -p 8081:8081 --env-file .env ms-medical-appointment
 ```
 
 ---
 
-## Endpoints
+## Endpoints y Ejemplos
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
@@ -180,13 +196,161 @@ docker run -p 8080:8080 --env-file .env ms-medical-appointment
 | GET | `/api/v1/pacientes/{id}` | Consultar paciente |
 | PUT | `/api/v1/pacientes/{id}` | Actualizar paciente |
 | POST | `/api/v1/citas` | Reservar cita |
-| GET | `/api/v1/citas` | Listar citas (filtros opcionales: medico_id, paciente_id, estado, fecha_inicio, fecha_fin) |
+| GET | `/api/v1/citas` | Listar citas |
 | GET | `/api/v1/citas/{id}` | Consultar cita |
 | DELETE | `/api/v1/citas/{id}` | Cancelar cita |
 | POST | `/api/v1/citas/{id}/reprogramar` | Reprogramar cita |
-| GET | `/api/v1/disponibilidad` | Consultar disponibilidad de franjas (requiere medico_id, fecha_inicio, fecha_fin) |
+| GET | `/api/v1/disponibilidad` | Disponibilidad de franjas |
 
-> **Nota:** La documentacion interactiva completa (request/response schemas, ejemplos, codigos HTTP) esta disponible en Swagger UI.
+### Ejemplos de Request/Response
+
+#### ▶️ POST /api/v1/medicos — Registrar medico
+
+**Request:**
+```json
+{
+  "nombre_completo": "Dr. Juan Perez",
+  "especialidad": "Cardiologia",
+  "telefono": "555-2001",
+  "email": "juan.perez@medisalud.com"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "nombre_completo": "Dr. Juan Perez",
+  "especialidad": "Cardiologia",
+  "telefono": "555-2001",
+  "email": "juan.perez@medisalud.com",
+  "activo": true,
+  "created_at": "2026-07-18T10:00:00Z",
+  "updated_at": "2026-07-18T10:00:00Z"
+}
+```
+
+#### ▶️ POST /api/v1/pacientes — Registrar paciente
+
+**Request:**
+```json
+{
+  "nombre_completo": "Maria Lopez",
+  "documento_identidad": "CC-1234567",
+  "telefono": "3001234567",
+  "email": "maria@email.com",
+  "fecha_nacimiento": "1990-05-15"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "nombre_completo": "Maria Lopez",
+  "documento_identidad": "CC-1234567",
+  "telefono": "3001234567",
+  "email": "maria@email.com",
+  "fecha_nacimiento": "1990-05-15",
+  "created_at": "2026-07-18T10:00:00Z",
+  "updated_at": "2026-07-18T10:00:00Z"
+}
+```
+
+#### ▶️ POST /api/v1/citas — Reservar cita
+
+**Request:**
+```json
+{
+  "paciente_id": "550e8400-e29b-41d4-a716-446655440001",
+  "medico_id": "550e8400-e29b-41d4-a716-446655440000",
+  "fecha_hora": "2026-07-21T09:00:00-05:00"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440003",
+  "paciente_id": "550e8400-e29b-41d4-a716-446655440001",
+  "medico_id": "550e8400-e29b-41d4-a716-446655440000",
+  "fecha_hora": "2026-07-21T09:00:00-05:00",
+  "estado": "PROGRAMADA",
+  "created_at": "2026-07-18T10:00:00Z",
+  "updated_at": "2026-07-18T10:00:00Z"
+}
+```
+
+#### ▶️ DELETE /api/v1/citas/{id} — Cancelar cita
+
+**Response (200 OK):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440003",
+  "estado": "CANCELADA",
+  "motivo_cancelacion": "Cancelado por el paciente",
+  "fecha_cancelacion": "2026-07-18T10:30:00Z",
+  ...
+}
+```
+
+#### ▶️ GET /api/v1/disponibilidad?medico_id={id}&fecha_inicio=2026-07-20&fecha_fin=2026-07-25
+
+**Response (200 OK):**
+```json
+{
+  "franjas": [
+    {
+      "medico_id": "550e8400-e29b-41d4-a716-446655440000",
+      "inicio": "2026-07-20T08:00:00-05:00",
+      "fin": "2026-07-20T08:30:00-05:00",
+      "disponible": true
+    },
+    {
+      "medico_id": "550e8400-e29b-41d4-a716-446655440000",
+      "inicio": "2026-07-20T08:30:00-05:00",
+      "fin": "2026-07-20T09:00:00-05:00",
+      "disponible": false
+    }
+  ]
+}
+```
+
+> **Nota:** La documentacion interactiva completa con schemas, codigos HTTP y ejemplos para todos los endpoints esta disponible en **Swagger UI**: [http://localhost:8081/swagger-ui/index.html](http://localhost:8081/swagger-ui/index.html)
+
+---
+
+## Manejo de Errores
+
+Todas las respuestas de error siguen el formato estandar `ApiErrorResponse`:
+
+```json
+{
+  "timestamp": "2026-07-18T10:30:00Z",
+  "status": 422,
+  "error": "UNPROCESSABLE_ENTITY",
+  "code": "INVALID_SLOT",
+  "message": "Las citas solo estan disponibles de Lunes a Viernes 8:00-18:00 y Sabados 8:00-13:00",
+  "path": "/api/v1/citas",
+  "trace_id": "4f0f6d2c-6b1d-4c8a-9e3f-7a2b5c8d1e0f",
+  "details": null
+}
+```
+
+**Codigos de error estables:**
+
+| HTTP | Code | Descripcion |
+|------|------|-------------|
+| 400 | `VALIDATION_ERROR` | Campos invalidos o desconocidos en la solicitud |
+| 400 | `INVALID_REQUEST_BODY` | JSON malformado |
+| 422 | `INVALID_SLOT` | Franja horaria fuera del horario de atencion (RN-01) |
+| 422 | `INVALID_BIRTH_DATE` | Fecha de nacimiento futura (RN-03) |
+| 404 | `RESOURCE_NOT_FOUND` | Recurso (medico, paciente, cita) no existe |
+| 409 | `MEDICO_SLOT_CONFLICT` | Medico ya tiene cita en esa franja (RN-02) |
+| 409 | `PACIENTE_SLOT_CONFLICT` | Paciente ya tiene cita en esa franja (RN-04) |
+| 409 | `PACIENTE_BLOCKED` | Paciente bloqueado por penalizaciones (RN-05) |
+| 409 | `CITA_ALREADY_CANCELLED` | La cita ya fue cancelada |
+| 500 | `INTERNAL_ERROR` | Error inesperado del servidor |
 
 ---
 

@@ -130,7 +130,7 @@ El proyecto cuenta con **184 tests automatizados** (0 fallos, 0 ignorados, ejecu
 1. Clonar el repositorio:
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/cristiansrc/ms-medical-appointment.git
 cd ms-medical-appointment
 ```
 

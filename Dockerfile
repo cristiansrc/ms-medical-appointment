@@ -17,4 +17,5 @@ EXPOSE 8080
 USER appuser
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD wget -qO- http://localhost:8080/actuator/health || exit 1
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENV TZ=UTC
+ENTRYPOINT ["java", "-Duser.timezone=UTC", "-jar", "app.jar"]

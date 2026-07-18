@@ -15,6 +15,7 @@ public class SecurityHeadersFilter implements Filter {
         httpResponse.setHeader("X-Content-Type-Options", "nosniff");
         httpResponse.setHeader("X-Frame-Options", "DENY");
         httpResponse.setHeader("Cache-Control", "no-store");
+        httpResponse.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
         chain.doFilter(request, response);
     }
 }

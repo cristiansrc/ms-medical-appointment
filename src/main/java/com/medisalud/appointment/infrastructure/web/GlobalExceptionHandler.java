@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +44,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        Throwable rootCause = ex.getRootCause();
+        if (rootCause instanceof UnrecognizedPropertyException upe) {
+            String unknownField = upe.getPropertyName();
+            log.warn("Unknown field in request body: {}", unknownField);
+            ApiErrorDetail detail = ApiErrorDetail.builder()
+                    .field(unknownField)
+                    .code("UNKNOWN_FIELD")
+                    .message("Field '" + unknownField + "' is not recognized for this resource")
+                    .rejectedValue(null)
+                    .build();
+            return buildResponse(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
+                    "The request contains an unrecognized field: " + unknownField, request, List.of(detail));
+        }
         log.warn("Malformed request body: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_REQUEST_BODY",
                 "The request body is malformed or contains invalid data.", request, null);

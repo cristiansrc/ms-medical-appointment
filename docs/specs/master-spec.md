@@ -941,6 +941,8 @@ jobs:
 | D-13 | MapStruct para mapeo entre capas | Estandar java-stack para conversiones Entity <-> Domain y DTO <-> Command/Result. |
 | D-14 | Virtual Threads habilitados | `spring.threads.virtual.enabled=true` para mejor throughput en I/O. |
 | D-15 | Lombok para reducir boilerplate en DTOs, entidades JPA y builders | `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` en DTOs y entidades de infraestructura. Domain NO usa Lombok (debe ser Java puro). |
+| D-16 | CORS `*` (permitir todos los origenes) | MVP sin frontend definido. Cuando se implemente un frontend, debe restringirse al origen especifico mediante propiedades por perfil. |
+| D-17 | Timezone UTC forzado via JVM | `-Duser.timezone=UTC` en el entrypoint del Dockerfile. Todos los `OffsetDateTime.now()` y `LocalDate.now()` en la aplicacion usan UTC. Decisión global para evitar inconsistencias entre capas y entornos. |
 
 ---
 
@@ -993,6 +995,7 @@ Las siguientes mejoras estan fuera del alcance de este incremento pero fueron id
 8. Internacionalizacion (i18n).
 9. Pruebas E2E con frontend.
 10. Frontend con React o Angular (interfaz de usuario para pacientes y administradores).
+11. Restringir CORS por origen en produccion (D-16).
 
 ---
 

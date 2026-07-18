@@ -20,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -40,8 +40,6 @@ public class CitaService implements CitaUseCase {
     private final FestivoRepository festivoRepository;
 
     private static final int FRANJA_MINUTOS = 30;
-    private static final LocalTime HORA_INICIO = LocalTime.of(7, 0);
-    private static final LocalTime HORA_FIN = LocalTime.of(17, 0);
 
     @Override
     @Transactional
@@ -54,7 +52,7 @@ public class CitaService implements CitaUseCase {
 
         // RN-01: Validar franja horaria
         if (!ValidadorReglasNegocio.esFranjaHorariaValida(fechaHora)) {
-            throw new BusinessException("INVALID_SCHEDULE", "Las citas solo estan disponibles de Lunes a Sabado, 7:00-17:00");
+            throw new BusinessException("INVALID_SLOT", "Las citas solo estan disponibles de Lunes a Viernes 8:00-18:00 y Sabados 8:00-13:00");
         }
         if (!ValidadorReglasNegocio.esFranjaDe30Minutos(fechaHora)) {
             throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos (minutos 0 o 30)");
@@ -63,19 +61,19 @@ public class CitaService implements CitaUseCase {
         // RN-01b: No domingos ni festivos
         LocalDate fechaLocal = fechaHora.toLocalDate();
         if (festivoRepository.esFestivo(fechaLocal)) {
-            throw new BusinessException("HOLIDAY", "No se pueden agendar citas en dias festivos");
+            throw new BusinessException("INVALID_SLOT", "No se pueden agendar citas en dias festivos");
         }
 
-        // RN-03: Edad minima 18 años
-        if (paciente.getFechaNacimiento() != null && !ValidadorReglasNegocio.esMayorDeEdad(paciente.getFechaNacimiento())) {
-            throw new BusinessException("UNDERAGE", "El paciente debe ser mayor de 18 anios para agendar una cita");
+        // RN-03: Fecha de nacimiento no futura
+        if (paciente.getFechaNacimiento() != null && !ValidadorReglasNegocio.esFechaNacimientoValida(paciente.getFechaNacimiento())) {
+            throw new BusinessException("INVALID_BIRTH_DATE", "La fecha de nacimiento no puede ser futura");
         }
 
         // RN-05: Verificar bloqueo por penalizaciones
-        OffsetDateTime treintaDiasAtras = OffsetDateTime.now(ZoneOffset.UTC).minusDays(30);
+        OffsetDateTime treintaDiasAtras = fechaHora.minusDays(30);
         int penalizaciones = penalizacionRepository.countByPacienteIdAndFechaAfter(pacienteId, treintaDiasAtras);
         if (ValidadorReglasNegocio.excedeLimitePenalizaciones(penalizaciones)) {
-            throw new BusinessException("BLOCKED_PATIENT",
+            throw new BusinessException("PACIENTE_BLOCKED",
                     "El paciente tiene " + penalizaciones + " cancelaciones tardias en los ultimos 30 dias. No puede agendar nuevas citas.");
         }
 
@@ -94,7 +92,7 @@ public class CitaService implements CitaUseCase {
         boolean pacienteOcupado = citasPaciente.stream()
                 .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()));
         if (pacienteOcupado) {
-            throw new ConflictException("PATIENT_SLOT_CONFLICT",
+            throw new ConflictException("PACIENTE_SLOT_CONFLICT",
                     "El paciente ya tiene una cita programada en esta franja horaria");
         }
 
@@ -113,7 +111,7 @@ public class CitaService implements CitaUseCase {
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", citaId));
 
         if (!"PROGRAMADA".equals(cita.getEstado())) {
-            throw new BusinessException("ALREADY_CANCELLED", "La cita ya fue cancelada anteriormente");
+            throw new BusinessException("CITA_ALREADY_CANCELLED", "La cita ya fue cancelada anteriormente");
         }
 
         // RN-05: Verificar si la cancelación es tardía (≤ 2h antes)
@@ -141,12 +139,12 @@ public class CitaService implements CitaUseCase {
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", citaId));
 
         if (!"PROGRAMADA".equals(cita.getEstado())) {
-            throw new BusinessException("ALREADY_CANCELLED", "No se puede reprogramar una cita cancelada");
+            throw new BusinessException("CITA_ALREADY_CANCELLED", "No se puede reprogramar una cita cancelada");
         }
 
         // RN-01: Validar nueva franja
         if (!ValidadorReglasNegocio.esFranjaHorariaValida(nuevaFechaHora)) {
-            throw new BusinessException("INVALID_SCHEDULE", "La nueva fecha/hora no esta dentro del horario permitido");
+            throw new BusinessException("INVALID_SLOT", "La nueva fecha/hora no esta dentro del horario permitido");
         }
         if (!ValidadorReglasNegocio.esFranjaDe30Minutos(nuevaFechaHora)) {
             throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos");
@@ -169,7 +167,7 @@ public class CitaService implements CitaUseCase {
         boolean pacienteOcupado = citasPaciente.stream()
                 .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
         if (pacienteOcupado) {
-            throw new ConflictException("PATIENT_SLOT_CONFLICT",
+            throw new ConflictException("PACIENTE_SLOT_CONFLICT",
                     "El paciente ya tiene una cita en la nueva franja horaria");
         }
 
@@ -186,18 +184,23 @@ public class CitaService implements CitaUseCase {
                 .orElseThrow(() -> new ResourceNotFoundException("Medico", medicoId));
 
         // Verificar si es domingo o festivo
-        if (fecha.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+        if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
             return List.of(); // No hay disponibilidad en domingos
         }
         if (festivoRepository.esFestivo(fecha)) {
             return List.of(); // No hay disponibilidad en festivos
         }
 
-        // Generar todas las franjas del día (7:00 a 16:30, cada 30 min)
+        // Generar todas las franjas del día según horario
         List<FranjaHoraria> franjas = new ArrayList<>();
         OffsetDateTime inicioDia = fecha.atStartOfDay(ZoneOffset.ofHours(-5)).toOffsetDateTime()
-                .withHour(7).withMinute(0).withSecond(0).withNano(0);
-        OffsetDateTime finDia = inicioDia.withHour(17).withMinute(0);
+                .withHour(8).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime finDia;
+        if (fecha.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            finDia = inicioDia.withHour(13).withMinute(0);
+        } else {
+            finDia = inicioDia.withHour(18).withMinute(0);
+        }
 
         // Obtener citas del medico en ese día
         List<Cita> citasDelDia = citaRepository.findByMedicoIdAndFechaBetween(medicoId, inicioDia, finDia);
@@ -226,7 +229,7 @@ public class CitaService implements CitaUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Cita> listarCitas(UUID medicoId, UUID pacienteId, String estado, LocalDate fecha) {
-        return citaRepository.findAllWithFilters(medicoId, pacienteId, estado, fecha);
+    public List<Cita> listarCitas(UUID medicoId, UUID pacienteId, String estado, LocalDate fechaInicio, LocalDate fechaFin) {
+        return citaRepository.findAllWithFilters(medicoId, pacienteId, estado, fechaInicio, fechaFin);
     }
 }

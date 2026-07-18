@@ -44,7 +44,7 @@ public class CitaController implements CitasApi {
     @Override
     public ResponseEntity<List<CitaResponse>> listCitas(UUID medicoId, UUID pacienteId, EstadoCitaEnum estado, LocalDate fechaInicio, LocalDate fechaFin) {
         String estadoStr = estado != null ? estado.name() : null;
-        List<Cita> citas = citaUseCase.listarCitas(medicoId, pacienteId, estadoStr, fechaInicio);
+        List<Cita> citas = citaUseCase.listarCitas(medicoId, pacienteId, estadoStr, fechaInicio, fechaFin);
         List<CitaResponse> response = citas.stream().map(this::toResponse).toList();
         return ResponseEntity.ok(response);
     }

@@ -3,7 +3,7 @@
 > **Version:** 1.0.0
 > **Fecha:** 2026-07-17
 > **Autor:** planner
-> **Status:** `awaiting-human-plan-approval`
+> **Status:** `approved`
 > **Incremento:** medical-appointment
 
 ---
@@ -996,6 +996,7 @@ Las siguientes mejoras estan fuera del alcance de este incremento pero fueron id
 9. Pruebas E2E con frontend.
 10. Frontend con React o Angular (interfaz de usuario para pacientes y administradores).
 11. Restringir CORS por origen en produccion (D-16).
+12. **Reprogramación como cancel+create:** Actualmente reprogramar modifica la cita in-place (mismo UUID). La especificación (RN-06) describe el flujo como cancelar la cita original + crear una nueva. Esto permitiría mantener un historial completo de reprogramaciones y aplicar correctamente penalizaciones por cancelación tardía durante la reprogramación.
 
 ---
 

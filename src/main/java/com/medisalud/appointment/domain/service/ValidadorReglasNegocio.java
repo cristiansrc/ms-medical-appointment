@@ -15,20 +15,22 @@ import java.util.UUID;
  */
 public final class ValidadorReglasNegocio {
 
-    private static final LocalTime HORA_INICIO = LocalTime.of(7, 0);
-    private static final LocalTime HORA_FIN = LocalTime.of(17, 0);
-
     private ValidadorReglasNegocio() {}
 
     /**
-     * RN-01: Solo Lunes a Sabado, 7:00-17:00, franjas de 30 min.
+     * RN-01: Lun-Vie 08:00-18:00 (ultima franja 17:30), Sab 08:00-13:00 (ultima franja 12:30), Dom/festivos sin atencion.
      */
     public static boolean esFranjaHorariaValida(OffsetDateTime fechaHora) {
         DayOfWeek dia = fechaHora.getDayOfWeek();
         if (dia == DayOfWeek.SUNDAY) return false;
 
         LocalTime hora = fechaHora.toLocalTime();
-        return !hora.isBefore(HORA_INICIO) && !hora.isAfter(HORA_FIN.minusMinutes(30));
+        if (dia == DayOfWeek.SATURDAY) {
+            // Sabado: 08:00 - 13:00 (ultima franja 12:30)
+            return !hora.isBefore(LocalTime.of(8, 0)) && !hora.isAfter(LocalTime.of(12, 30));
+        }
+        // Lunes a Viernes: 08:00 - 18:00 (ultima franja 17:30)
+        return !hora.isBefore(LocalTime.of(8, 0)) && !hora.isAfter(LocalTime.of(17, 30));
     }
 
     /**
@@ -40,12 +42,11 @@ public final class ValidadorReglasNegocio {
     }
 
     /**
-     * RN-03: Edad minima 18 años.
+     * RN-03: No se aceptan fechas de nacimiento futuras. Si no se proporciona, se omite validacion.
      */
-    public static boolean esMayorDeEdad(LocalDate fechaNacimiento) {
-        if (fechaNacimiento == null) return true; // si no hay fecha, no se valida
-        return fechaNacimiento.plusYears(18).isBefore(LocalDate.now())
-                || fechaNacimiento.plusYears(18).isEqual(LocalDate.now());
+    public static boolean esFechaNacimientoValida(LocalDate fechaNacimiento) {
+        if (fechaNacimiento == null) return true;
+        return !fechaNacimiento.isAfter(LocalDate.now());
     }
 
     /**

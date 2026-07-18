@@ -44,8 +44,8 @@ public class CitaRepositoryAdapter implements CitaRepository {
     }
 
     @Override
-    public List<Cita> findAllWithFilters(UUID medicoId, UUID pacienteId, String estado, LocalDate fecha) {
-        return jpaRepository.findAllWithFilters(medicoId, pacienteId, estado, fecha)
+    public List<Cita> findAllWithFilters(UUID medicoId, UUID pacienteId, String estado, LocalDate fechaInicio, LocalDate fechaFin) {
+        return jpaRepository.findAllWithFilters(medicoId, pacienteId, estado, fechaInicio, fechaFin)
                 .stream().map(mapper::toDomain).toList();
     }
 }

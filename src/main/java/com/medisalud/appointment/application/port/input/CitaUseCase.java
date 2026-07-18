@@ -13,5 +13,5 @@ public interface CitaUseCase {
     Cita reprogramar(UUID citaId, OffsetDateTime nuevaFechaHora);
     List<FranjaHoraria> consultarDisponibilidad(UUID medicoId, LocalDate fecha);
     Cita obtenerPorId(UUID id);
-    List<Cita> listarCitas(UUID medicoId, UUID pacienteId, String estado, LocalDate fecha);
+    List<Cita> listarCitas(UUID medicoId, UUID pacienteId, String estado, LocalDate fechaInicio, LocalDate fechaFin);
 }

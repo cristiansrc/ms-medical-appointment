@@ -128,7 +128,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("BusinessException retorna 422")
     void should_Return422_when_BusinessException() {
-        BusinessException ex = new BusinessException("INVALID_SCHEDULE", "Horario invalido");
+        BusinessException ex = new BusinessException("INVALID_SLOT", "Horario invalido");
 
         ResponseEntity<?> response = handler.handleBusiness(ex, request);
 

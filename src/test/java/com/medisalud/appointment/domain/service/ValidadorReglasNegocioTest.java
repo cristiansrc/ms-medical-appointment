@@ -25,12 +25,14 @@ class ValidadorReglasNegocioTest {
 
         @ParameterizedTest
         @CsvSource({
-            "2026-07-20, 07:00, true",   // Lunes 7:00
-            "2026-07-20, 16:30, true",   // Lunes 16:30
+            "2026-07-20, 08:00, true",   // Lunes 8:00
+            "2026-07-20, 17:30, true",   // Lunes 17:30 (ultima franja)
             "2026-07-25, 10:00, true",   // Sabado 10:00
+            "2026-07-25, 12:30, true",   // Sabado 12:30 (ultima franja)
             "2026-07-26, 10:00, false",  // Domingo
-            "2026-07-20, 06:59, false",  // Antes de 7:00
-            "2026-07-20, 17:01, false",  // Despues de 17:00
+            "2026-07-20, 07:59, false",  // Antes de 8:00
+            "2026-07-20, 17:31, false",  // Despues de 17:30 (entre semana)
+            "2026-07-25, 12:31, false",  // Despues de 12:30 (sabado)
         })
         void testEsFranjaHorariaValida(String fecha, String hora, boolean esperado) {
             OffsetDateTime fechaHora = LocalDate.parse(fecha)
@@ -58,34 +60,34 @@ class ValidadorReglasNegocioTest {
     }
 
     @Nested
-    @DisplayName("RN-03: Edad minima 18 años")
-    class EdadMinimaTest {
+    @DisplayName("RN-03: Fecha de nacimiento valida")
+    class FechaNacimientoTest {
 
         @Test
-        @DisplayName("Paciente mayor de 18 años")
-        void mayorDeEdad() {
+        @DisplayName("Fecha de nacimiento valida (pasada)")
+        void fechaValida() {
             LocalDate fecha = LocalDate.now().minusYears(20);
-            assertTrue(ValidadorReglasNegocio.esMayorDeEdad(fecha));
+            assertTrue(ValidadorReglasNegocio.esFechaNacimientoValida(fecha));
         }
 
         @Test
-        @DisplayName("Paciente menor de 18 años")
-        void menorDeEdad() {
-            LocalDate fecha = LocalDate.now().minusYears(17);
-            assertFalse(ValidadorReglasNegocio.esMayorDeEdad(fecha));
+        @DisplayName("Fecha de nacimiento futura no es valida")
+        void fechaFutura() {
+            LocalDate fecha = LocalDate.now().plusDays(1);
+            assertFalse(ValidadorReglasNegocio.esFechaNacimientoValida(fecha));
         }
 
         @Test
-        @DisplayName("Paciente exactamente 18 años")
-        void exactamente18() {
-            LocalDate fecha = LocalDate.now().minusYears(18);
-            assertTrue(ValidadorReglasNegocio.esMayorDeEdad(fecha));
+        @DisplayName("Fecha de nacimiento hoy es valida")
+        void fechaHoy() {
+            LocalDate fecha = LocalDate.now();
+            assertTrue(ValidadorReglasNegocio.esFechaNacimientoValida(fecha));
         }
 
         @Test
-        @DisplayName("Fecha nula no bloquea")
+        @DisplayName("Fecha nula es valida (no se valida)")
         void fechaNula() {
-            assertTrue(ValidadorReglasNegocio.esMayorDeEdad(null));
+            assertTrue(ValidadorReglasNegocio.esFechaNacimientoValida(null));
         }
     }
 

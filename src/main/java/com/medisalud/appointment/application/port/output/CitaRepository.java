@@ -12,5 +12,5 @@ public interface CitaRepository {
     Optional<Cita> findById(UUID id);
     List<Cita> findByMedicoIdAndFechaBetween(UUID medicoId, OffsetDateTime inicio, OffsetDateTime fin);
     List<Cita> findByPacienteIdAndFechaBetween(UUID pacienteId, OffsetDateTime inicio, OffsetDateTime fin);
-    List<Cita> findAllWithFilters(UUID medicoId, UUID pacienteId, String estado, LocalDate fecha);
+    List<Cita> findAllWithFilters(UUID medicoId, UUID pacienteId, String estado, LocalDate fechaInicio, LocalDate fechaFin);
 }

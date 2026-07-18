@@ -49,7 +49,7 @@ class CitaControllerTest {
     @DisplayName("POST /api/v1/citas con regla de negocio retorna 422")
     void createCitaBusinessError() throws Exception {
         when(citaUseCase.reservar(any(), any(), any()))
-                .thenThrow(new BusinessException("INVALID_SCHEDULE", "Las citas solo estan disponibles de Lunes a Sabado"));
+                .thenThrow(new BusinessException("INVALID_SLOT", "Las citas solo estan disponibles de Lunes a Sabado"));
 
         mockMvc.perform(post("/api/v1/citas")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -57,7 +57,7 @@ class CitaControllerTest {
                                 + "\",\"medico_id\":\"" + UUID.randomUUID()
                                 + "\",\"fecha_hora\":\"2026-07-26T10:00:00-05:00\"}"))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.code").value("INVALID_SCHEDULE"));
+                .andExpect(jsonPath("$.code").value("INVALID_SLOT"));
     }
 
     @Test
@@ -116,12 +116,12 @@ class CitaControllerTest {
     void should_Return422_when_AlreadyCancelled() throws Exception {
         UUID citaId = UUID.randomUUID();
         when(citaUseCase.cancelar(any(), any()))
-                .thenThrow(new BusinessException("ALREADY_CANCELLED", "La cita ya fue cancelada"));
+                .thenThrow(new BusinessException("CITA_ALREADY_CANCELLED", "La cita ya fue cancelada"));
 
         mockMvc.perform(delete("/api/v1/citas/" + citaId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.code").value("ALREADY_CANCELLED"));
+                .andExpect(jsonPath("$.code").value("CITA_ALREADY_CANCELLED"));
     }
 
     @Test
@@ -143,7 +143,7 @@ class CitaControllerTest {
     @DisplayName("GET /api/v1/citas retorna lista de citas")
     void should_ListCitas() throws Exception {
         Cita cita = new Cita(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now());
-        when(citaUseCase.listarCitas(any(), any(), any(), any())).thenReturn(List.of(cita));
+        when(citaUseCase.listarCitas(any(), any(), any(), any(), any())).thenReturn(List.of(cita));
 
         mockMvc.perform(get("/api/v1/citas")
                         .contentType(MediaType.APPLICATION_JSON))

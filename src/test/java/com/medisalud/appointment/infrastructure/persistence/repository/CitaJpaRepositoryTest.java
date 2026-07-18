@@ -48,7 +48,7 @@ class CitaJpaRepositoryTest {
         cita.setEstado("PROGRAMADA");
         citaJpaRepository.save(cita);
 
-        var result = citaJpaRepository.findAllWithFilters(medicoId, null, "PROGRAMADA", ahora.toLocalDate());
+        var result = citaJpaRepository.findAllWithFilters(medicoId, null, "PROGRAMADA", ahora.toLocalDate(), ahora.toLocalDate());
         assertEquals(1, result.size());
     }
 }

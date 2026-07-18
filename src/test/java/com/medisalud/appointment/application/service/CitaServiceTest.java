@@ -110,7 +110,7 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reservar(pacienteId, medicoId, domingo));
-            assertEquals("INVALID_SCHEDULE", ex.getCode());
+            assertEquals("INVALID_SLOT", ex.getCode());
         }
 
         @Test
@@ -122,7 +122,7 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reservar(pacienteId, medicoId, fueraHorario));
-            assertEquals("INVALID_SCHEDULE", ex.getCode());
+            assertEquals("INVALID_SLOT", ex.getCode());
         }
 
         @Test
@@ -146,20 +146,20 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reservar(pacienteId, medicoId, fechaValida));
-            assertEquals("HOLIDAY", ex.getCode());
+            assertEquals("INVALID_SLOT", ex.getCode());
         }
 
         @Test
-        @DisplayName("Lanza BusinessException cuando el paciente es menor de edad")
-        void should_ThrowBusinessException_when_UnderagePatient() {
-            Paciente menor = new Paciente(pacienteId, "Menor", "87654321", "555-0002", "m@test.com",
-                    LocalDate.now().minusYears(17));
+        @DisplayName("Lanza BusinessException cuando la fecha de nacimiento es futura")
+        void should_ThrowBusinessException_when_InvalidBirthDate() {
+            Paciente futuro = new Paciente(pacienteId, "Futuro", "87654321", "555-0002", "m@test.com",
+                    LocalDate.now().plusDays(1));
             when(medicoRepository.findById(medicoId)).thenReturn(Optional.of(medico));
-            when(pacienteRepository.findById(pacienteId)).thenReturn(Optional.of(menor));
+            when(pacienteRepository.findById(pacienteId)).thenReturn(Optional.of(futuro));
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reservar(pacienteId, medicoId, fechaValida));
-            assertEquals("UNDERAGE", ex.getCode());
+            assertEquals("INVALID_BIRTH_DATE", ex.getCode());
         }
 
         @Test
@@ -172,7 +172,7 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reservar(pacienteId, medicoId, fechaValida));
-            assertEquals("BLOCKED_PATIENT", ex.getCode());
+            assertEquals("PACIENTE_BLOCKED", ex.getCode());
         }
 
         @Test
@@ -205,7 +205,7 @@ class CitaServiceTest {
 
             ConflictException ex = assertThrows(ConflictException.class,
                     () -> citaService.reservar(pacienteId, medicoId, fechaValida));
-            assertEquals("PATIENT_SLOT_CONFLICT", ex.getCode());
+            assertEquals("PACIENTE_SLOT_CONFLICT", ex.getCode());
         }
 
         @Test
@@ -275,7 +275,7 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.cancelar(cita.getId(), "Otra cancelacion"));
-            assertEquals("ALREADY_CANCELLED", ex.getCode());
+            assertEquals("CITA_ALREADY_CANCELLED", ex.getCode());
         }
 
         @Test
@@ -323,7 +323,7 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reprogramar(cita.getId(), OffsetDateTime.now().plusDays(2)));
-            assertEquals("ALREADY_CANCELLED", ex.getCode());
+            assertEquals("CITA_ALREADY_CANCELLED", ex.getCode());
         }
 
         @Test
@@ -335,7 +335,7 @@ class CitaServiceTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reprogramar(cita.getId(), domingo));
-            assertEquals("INVALID_SCHEDULE", ex.getCode());
+            assertEquals("INVALID_SLOT", ex.getCode());
         }
     }
 
@@ -350,9 +350,9 @@ class CitaServiceTest {
         @Test
         @DisplayName("Retorna lista vacia cuando no hay filtros y no hay citas")
         void should_ListCitas_when_NoFilters() {
-            when(citaRepository.findAllWithFilters(null, null, null, null)).thenReturn(List.of());
+            when(citaRepository.findAllWithFilters(null, null, null, null, null)).thenReturn(List.of());
 
-            List<Cita> result = citaService.listarCitas(null, null, null, null);
+            List<Cita> result = citaService.listarCitas(null, null, null, null, null);
 
             assertTrue(result.isEmpty());
         }
@@ -361,10 +361,10 @@ class CitaServiceTest {
         @DisplayName("Retorna citas filtradas cuando se aplican filtros")
         void should_ListCitas_when_WithFilters() {
             Cita cita = new Cita(UUID.randomUUID(), pacienteId, medicoId, OffsetDateTime.now());
-            when(citaRepository.findAllWithFilters(eq(medicoId), eq(pacienteId), eq("PROGRAMADA"), any()))
+            when(citaRepository.findAllWithFilters(eq(medicoId), eq(pacienteId), eq("PROGRAMADA"), any(), any()))
                     .thenReturn(List.of(cita));
 
-            List<Cita> result = citaService.listarCitas(medicoId, pacienteId, "PROGRAMADA", LocalDate.now());
+            List<Cita> result = citaService.listarCitas(medicoId, pacienteId, "PROGRAMADA", LocalDate.now(), LocalDate.now());
 
             assertEquals(1, result.size());
             assertEquals(medicoId, result.get(0).getMedicoId());
@@ -390,7 +390,7 @@ class CitaServiceTest {
             List<FranjaHoraria> result = citaService.consultarDisponibilidad(medicoId, lunes);
 
             assertFalse(result.isEmpty());
-            // 7:00 a 17:00 = 10h = 20 franjas de 30 min
+            // 8:00 a 18:00 = 10h = 20 franjas de 30 min
             assertEquals(20, result.size());
             assertTrue(result.stream().allMatch(FranjaHoraria::isDisponible));
         }

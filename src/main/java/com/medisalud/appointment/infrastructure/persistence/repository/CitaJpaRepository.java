@@ -19,10 +19,12 @@ public interface CitaJpaRepository extends JpaRepository<CitaEntity, UUID> {
            "(:medicoId IS NULL OR c.medicoId = :medicoId) AND " +
            "(:pacienteId IS NULL OR c.pacienteId = :pacienteId) AND " +
            "(:estado IS NULL OR c.estado = :estado) AND " +
-           "(:fecha IS NULL OR CAST(c.fechaHora AS LocalDate) = :fecha) " +
+           "(:fechaInicio IS NULL OR CAST(c.fechaHora AS LocalDate) >= :fechaInicio) AND " +
+           "(:fechaFin IS NULL OR CAST(c.fechaHora AS LocalDate) <= :fechaFin) " +
            "ORDER BY c.fechaHora DESC")
     List<CitaEntity> findAllWithFilters(@Param("medicoId") UUID medicoId,
                                          @Param("pacienteId") UUID pacienteId,
                                          @Param("estado") String estado,
-                                         @Param("fecha") LocalDate fecha);
+                                         @Param("fechaInicio") LocalDate fechaInicio,
+                                         @Param("fechaFin") LocalDate fechaFin);
 }

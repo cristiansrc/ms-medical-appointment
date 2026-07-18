@@ -108,11 +108,11 @@ class CitaRepositoryAdapterTest {
         CitaEntity entity = new CitaEntity();
         Cita expected = new Cita(UUID.randomUUID(), UUID.randomUUID(), medicoId, OffsetDateTime.now());
 
-        when(jpaRepository.findAllWithFilters(eq(medicoId), isNull(), eq("PROGRAMADA"), any()))
+        when(jpaRepository.findAllWithFilters(eq(medicoId), isNull(), eq("PROGRAMADA"), any(), any()))
                 .thenReturn(List.of(entity));
         when(mapper.toDomain(entity)).thenReturn(expected);
 
-        List<Cita> result = adapter.findAllWithFilters(medicoId, null, "PROGRAMADA", LocalDate.now());
+        List<Cita> result = adapter.findAllWithFilters(medicoId, null, "PROGRAMADA", LocalDate.now(), LocalDate.now());
 
         assertEquals(1, result.size());
     }

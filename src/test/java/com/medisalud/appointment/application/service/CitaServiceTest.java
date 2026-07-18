@@ -344,6 +344,73 @@ class CitaServiceTest {
                     () -> citaService.reprogramar(cita.getId(), domingo));
             assertEquals("INVALID_SLOT", ex.getCode());
         }
+
+        @Test
+        @DisplayName("Lanza ConflictException cuando el medico esta ocupado en la nueva franja")
+        void should_ThrowConflictException_when_MedicoOcupado() {
+            UUID originalId = UUID.randomUUID();
+            Cita cita = new Cita(originalId, pacienteId, medicoId, OffsetDateTime.now().plusDays(1));
+            OffsetDateTime nuevaFecha = LocalDate.now().plusDays(2)
+                    .atTime(10, 0).atOffset(ZoneOffset.ofHours(-5));
+            Cita citaExistente = new Cita(UUID.randomUUID(), pacienteId, medicoId, nuevaFecha);
+
+            when(citaRepository.findById(originalId)).thenReturn(Optional.of(cita));
+            when(festivoRepository.esFestivo(nuevaFecha.toLocalDate())).thenReturn(false);
+            when(citaRepository.findByMedicoIdAndFechaBetween(any(), any(), any()))
+                    .thenReturn(List.of(citaExistente));
+
+            ConflictException ex = assertThrows(ConflictException.class,
+                    () -> citaService.reprogramar(originalId, nuevaFecha));
+            assertEquals("MEDICO_SLOT_CONFLICT", ex.getCode());
+        }
+
+        @Test
+        @DisplayName("Lanza ConflictException cuando el paciente esta ocupado en la nueva franja")
+        void should_ThrowConflictException_when_PacienteOcupado() {
+            UUID originalId = UUID.randomUUID();
+            Cita cita = new Cita(originalId, pacienteId, medicoId, OffsetDateTime.now().plusDays(1));
+            OffsetDateTime nuevaFecha = LocalDate.now().plusDays(2)
+                    .atTime(10, 0).atOffset(ZoneOffset.ofHours(-5));
+            Cita citaExistente = new Cita(UUID.randomUUID(), pacienteId, medicoId, nuevaFecha);
+
+            when(citaRepository.findById(originalId)).thenReturn(Optional.of(cita));
+            when(festivoRepository.esFestivo(nuevaFecha.toLocalDate())).thenReturn(false);
+            when(citaRepository.findByMedicoIdAndFechaBetween(any(), any(), any())).thenReturn(List.of());
+            when(citaRepository.findByPacienteIdAndFechaBetween(any(), any(), any()))
+                    .thenReturn(List.of(citaExistente));
+
+            ConflictException ex = assertThrows(ConflictException.class,
+                    () -> citaService.reprogramar(originalId, nuevaFecha));
+            assertEquals("PACIENTE_SLOT_CONFLICT", ex.getCode());
+        }
+
+        @Test
+        @DisplayName("Reprograma exitosamente cuando hay citas no conflictivas en la franja")
+        void should_ReprogramCita_when_NonConflictingCitasExisten() {
+            UUID originalId = UUID.randomUUID();
+            Cita cita = new Cita(originalId, pacienteId, medicoId, OffsetDateTime.now().plusDays(1));
+            OffsetDateTime nuevaFecha = LocalDate.now().plusDays(2)
+                    .atTime(10, 0).atOffset(ZoneOffset.ofHours(-5));
+            // Una cita CANCELADA en la misma franja (no deberia bloquear)
+            Cita citaCancelada = new Cita(UUID.randomUUID(), pacienteId, medicoId, nuevaFecha);
+            citaCancelada.cancelar("Cancelada");
+
+            when(citaRepository.findById(originalId)).thenReturn(Optional.of(cita));
+            when(festivoRepository.esFestivo(nuevaFecha.toLocalDate())).thenReturn(false);
+            when(penalizacionRepository.countByPacienteIdAndFechaAfter(any(), any())).thenReturn(0);
+            when(citaRepository.findByMedicoIdAndFechaBetween(any(), any(), any()))
+                    .thenReturn(List.of(citaCancelada));
+            when(citaRepository.findByPacienteIdAndFechaBetween(any(), any(), any()))
+                    .thenReturn(List.of(citaCancelada));
+            when(citaRepository.save(any(Cita.class))).thenAnswer(i -> i.getArgument(0));
+
+            Cita result = citaService.reprogramar(originalId, nuevaFecha);
+
+            assertNotNull(result);
+            assertNotEquals(originalId, result.getId());
+            assertEquals("PROGRAMADA", result.getEstado());
+            verify(citaRepository, times(2)).save(any(Cita.class));
+        }
     }
 
     // ========================

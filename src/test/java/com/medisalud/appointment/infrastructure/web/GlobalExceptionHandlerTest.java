@@ -69,6 +69,21 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
+    @Test
+    @DisplayName("HttpMessageNotReadableException con UnrecognizedPropertyException retorna 400 con unknown field")
+    void should_Return400_when_HttpMessageNotReadableWithUnrecognizedProperty() {
+        com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException upe = mock(
+                com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.class);
+        when(upe.getPropertyName()).thenReturn("campo_desconocido");
+        HttpMessageNotReadableException ex = mock(HttpMessageNotReadableException.class);
+        when(ex.getRootCause()).thenReturn(upe);
+
+        ResponseEntity<?> response = handler.handleNotReadable(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("ConstraintViolationException retorna 400")
@@ -109,6 +124,18 @@ class GlobalExceptionHandlerTest {
         MethodArgumentTypeMismatchException ex = mock(MethodArgumentTypeMismatchException.class);
         when(ex.getName()).thenReturn("medicoId");
         when(ex.getValue()).thenReturn("invalid-uuid");
+
+        ResponseEntity<?> response = handler.handleTypeMismatch(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("MethodArgumentTypeMismatchException con valor null retorna 400")
+    void should_Return400_when_TypeMismatchWithNullValue() {
+        MethodArgumentTypeMismatchException ex = mock(MethodArgumentTypeMismatchException.class);
+        when(ex.getName()).thenReturn("medicoId");
+        when(ex.getValue()).thenReturn(null);
 
         ResponseEntity<?> response = handler.handleTypeMismatch(ex, request);
 

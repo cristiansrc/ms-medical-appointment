@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -149,6 +150,23 @@ class CitaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].estado").value("PROGRAMADA"));
+    }
+
+    @Test
+    @DisplayName("Listar citas sin filtro de estado retorna 200")
+    void should_ListCitas_when_EstadoNull() throws Exception {
+        UUID medicoId = UUID.randomUUID();
+        UUID pacienteId = UUID.randomUUID();
+        when(citaUseCase.listarCitas(any(), any(), isNull(), any(), any())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/citas")
+                        .param("medico_id", medicoId.toString())
+                        .param("paciente_id", pacienteId.toString())
+                        .param("fecha_inicio", "2026-07-20")
+                        .param("fecha_fin", "2026-07-25")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test

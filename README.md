@@ -175,14 +175,12 @@ Estas mejoras estan fuera del alcance del MVP actual pero fueron identificadas c
 
 1. **Autenticacion y autorizacion (JWT/Keycloak)** — Proteger endpoints por rol.
 2. **Paginacion** — En listados de citas, medicos y pacientes.
-3. **Estado ATENDIDA** — Para citas realizadas.
-4. **Reprogramacion como cancel+create** — Actualmente modifica in-place; no crea una nueva cita con nuevo UUID ni mantiene historial completo de reprogramaciones.
-5. **Notificaciones** — Email/SMS recordatorio de citas.
-6. **Internacionalizacion (i18n)** — Mensajes multi-idioma.
-7. **Frontend** — Interfaz de usuario con React o Angular.
-8. **Logs de auditoria** — Registro de todas las operaciones.
-9. **Restringir CORS** — Configurar origenes permitidos por perfil.
-10. **Pruebas E2E** — Con frontend o herramientas como Postman/Newman.
+3. **Notificaciones** — Email/SMS recordatorio de citas.
+4. **Internacionalizacion (i18n)** — Mensajes multi-idioma.
+5. **Frontend** — Interfaz de usuario con React o Angular.
+6. **Logs de auditoria** — Registro de todas las operaciones.
+7. **Restringir CORS** — Configurar origenes permitidos por perfil.
+8. **Pruebas E2E** — Con frontend o herramientas como Postman/Newman.
 
 ---
 

@@ -998,6 +998,7 @@ components:
       enum:
         - PROGRAMADA
         - CANCELADA
+        - ATENDIDA
       description: Estado de la cita medica
 
     # ==================== DISPONIBILIDAD ====================

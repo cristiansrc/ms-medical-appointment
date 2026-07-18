@@ -300,18 +300,24 @@ class CitaServiceTest {
         @Test
         @DisplayName("Reprograma cita exitosamente a nueva fecha valida")
         void should_ReprogramCita_when_Valid() {
-            Cita cita = new Cita(UUID.randomUUID(), pacienteId, medicoId, OffsetDateTime.now().plusDays(1));
+            UUID originalId = UUID.randomUUID();
+            Cita cita = new Cita(originalId, pacienteId, medicoId, OffsetDateTime.now().plusDays(1));
             OffsetDateTime nuevaFecha = LocalDate.now().plusDays(2)
                     .atTime(10, 0).atOffset(ZoneOffset.ofHours(-5));
-            when(citaRepository.findById(cita.getId())).thenReturn(Optional.of(cita));
+            when(citaRepository.findById(originalId)).thenReturn(Optional.of(cita));
+            when(festivoRepository.esFestivo(nuevaFecha.toLocalDate())).thenReturn(false);
+            when(penalizacionRepository.countByPacienteIdAndFechaAfter(any(), any())).thenReturn(0);
             when(citaRepository.findByMedicoIdAndFechaBetween(any(), any(), any())).thenReturn(List.of());
             when(citaRepository.findByPacienteIdAndFechaBetween(any(), any(), any())).thenReturn(List.of());
             when(citaRepository.save(any(Cita.class))).thenAnswer(i -> i.getArgument(0));
 
-            Cita result = citaService.reprogramar(cita.getId(), nuevaFecha);
+            Cita result = citaService.reprogramar(originalId, nuevaFecha);
 
+            assertNotNull(result);
             assertEquals(nuevaFecha, result.getFechaHora());
-            verify(citaRepository).save(any(Cita.class));
+            assertNotEquals(originalId, result.getId()); // Nueva cita, nuevo UUID
+            assertEquals("PROGRAMADA", result.getEstado());
+            verify(citaRepository, times(2)).save(any(Cita.class)); // Original cancelada + nueva cita
         }
 
         @Test
@@ -324,6 +330,7 @@ class CitaServiceTest {
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> citaService.reprogramar(cita.getId(), OffsetDateTime.now().plusDays(2)));
             assertEquals("CITA_ALREADY_CANCELLED", ex.getCode());
+            verify(citaRepository, never()).save(any());
         }
 
         @Test

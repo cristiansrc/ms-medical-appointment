@@ -135,10 +135,10 @@ public class CitaService implements CitaUseCase {
     @Override
     @Transactional
     public Cita reprogramar(UUID citaId, OffsetDateTime nuevaFechaHora) {
-        Cita cita = citaRepository.findById(citaId)
+        Cita citaOriginal = citaRepository.findById(citaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", citaId));
 
-        if (!"PROGRAMADA".equals(cita.getEstado())) {
+        if (!"PROGRAMADA".equals(citaOriginal.getEstado())) {
             throw new BusinessException("CITA_ALREADY_CANCELLED", "No se puede reprogramar una cita cancelada");
         }
 
@@ -150,10 +150,16 @@ public class CitaService implements CitaUseCase {
             throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos");
         }
 
-        // RN-02: Validar que el medico este disponible en la nueva franja
+        // RN-01b: Validar que la nueva fecha no sea festivo
+        LocalDate nuevaFechaLocal = nuevaFechaHora.toLocalDate();
+        if (festivoRepository.esFestivo(nuevaFechaLocal)) {
+            throw new BusinessException("INVALID_SLOT", "No se pueden agendar citas en dias festivos");
+        }
+
+        // RN-02: Validar medico disponible en la nueva franja (excluyendo la cita original)
         OffsetDateTime finFranja = nuevaFechaHora.plusMinutes(FRANJA_MINUTOS);
         List<Cita> citasMedico = citaRepository.findByMedicoIdAndFechaBetween(
-                cita.getMedicoId(), nuevaFechaHora, finFranja);
+                citaOriginal.getMedicoId(), nuevaFechaHora, finFranja);
         boolean medicoOcupado = citasMedico.stream()
                 .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
         if (medicoOcupado) {
@@ -161,9 +167,9 @@ public class CitaService implements CitaUseCase {
                     "El medico no esta disponible en la nueva franja horaria");
         }
 
-        // RN-04: Validar que el paciente este disponible en la nueva franja
+        // RN-04: Validar paciente disponible en la nueva franja (excluyendo la cita original)
         List<Cita> citasPaciente = citaRepository.findByPacienteIdAndFechaBetween(
-                cita.getPacienteId(), nuevaFechaHora, finFranja);
+                citaOriginal.getPacienteId(), nuevaFechaHora, finFranja);
         boolean pacienteOcupado = citasPaciente.stream()
                 .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
         if (pacienteOcupado) {
@@ -171,9 +177,36 @@ public class CitaService implements CitaUseCase {
                     "El paciente ya tiene una cita en la nueva franja horaria");
         }
 
-        cita.reprogramar(nuevaFechaHora);
-        Cita saved = citaRepository.save(cita);
-        log.info("Cita reprogramada: {} - Nueva fecha: {}", citaId, nuevaFechaHora);
+        // RN-05: Verificar bloqueo por penalizaciones (desde nueva fecha hacia atras 30 dias)
+        OffsetDateTime treintaDiasAtras = nuevaFechaHora.minusDays(30);
+        int penalizaciones = penalizacionRepository.countByPacienteIdAndFechaAfter(
+                citaOriginal.getPacienteId(), treintaDiasAtras);
+        if (ValidadorReglasNegocio.excedeLimitePenalizaciones(penalizaciones)) {
+            throw new BusinessException("PACIENTE_BLOCKED",
+                    "El paciente tiene " + penalizaciones + " cancelaciones tardias en los ultimos 30 dias. No puede reprogramar.");
+        }
+
+        // RN-05: Aplicar penalización por cancelación de la cita original si es tardía
+        boolean esTardia = ValidadorReglasNegocio.esCancelacionTardia(citaOriginal.getFechaHora());
+
+        // Cancelar cita original
+        citaOriginal.cancelar("Reprogramada");
+        citaRepository.save(citaOriginal);
+
+        if (esTardia) {
+            RegistroPenalizacion penalizacion = new RegistroPenalizacion(
+                    UUID.randomUUID(), citaOriginal.getPacienteId(), citaId);
+            penalizacionRepository.save(penalizacion);
+            log.warn("Penalizacion registrada para paciente {} por reprogramacion tardia de cita {}",
+                    citaOriginal.getPacienteId(), citaId);
+        }
+
+        // Crear nueva cita
+        Cita nuevaCita = new Cita(UUID.randomUUID(), citaOriginal.getPacienteId(),
+                citaOriginal.getMedicoId(), nuevaFechaHora);
+        Cita saved = citaRepository.save(nuevaCita);
+
+        log.info("Cita reprogramada: {} (original {}) - Nueva fecha: {}", saved.getId(), citaId, nuevaFechaHora);
         return saved;
     }
 

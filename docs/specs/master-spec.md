@@ -396,6 +396,8 @@ com.medisalud.appointment/
 | **Strategy** | `CitaService` consulta `CitaRepositoryPort.existsByPacienteIdAndFechaHoraAndEstado(pacienteId, fechaHora, PROGRAMADA)` antes de crear. |
 | **Error** | `PatientConflictException` → 409 CONFLICT, code: `PACIENTE_SLOT_CONFLICT` |
 
+> **Nota sobre RN-04:** El PDF de la prueba tiene una incongruencia en la redaccion de RN-04. La primera oracion dice "Un paciente no puede tener dos citas con el mismo medico en la misma franja horaria", pero la segunda oracion dice "(aunque sea otro medico en otra especialidad)", lo que contradice la primera. La implementacion adopta la interpretacion mas restrictiva (el paciente no puede tener ninguna cita en la misma franja, independientemente del medico), que es funcionalmente mas segura y coherente con el espiritu de evitar conflictos de horario para el paciente.
+
 ### RN-05: Penalizacion
 
 | Aspecto | Definicion |
@@ -943,6 +945,9 @@ jobs:
 | D-15 | Lombok para reducir boilerplate en DTOs, entidades JPA y builders | `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` en DTOs y entidades de infraestructura. Domain NO usa Lombok (debe ser Java puro). |
 | D-16 | CORS `*` (permitir todos los origenes) | MVP sin frontend definido. Cuando se implemente un frontend, debe restringirse al origen especifico mediante propiedades por perfil. |
 | D-17 | Timezone UTC forzado via JVM | `-Duser.timezone=UTC` en el entrypoint del Dockerfile. Todos los `OffsetDateTime.now()` y `LocalDate.now()` en la aplicacion usan UTC. Decisión global para evitar inconsistencias entre capas y entornos. |
+| D-18 | HTTP 422 (UNPROCESSABLE_ENTITY) para errores de reglas de negocio | El PDF de la prueba menciona 400 como codigo generico para errores de validacion de negocio, pero el estandar REST (RFC 4918, RFC 7231) define 422 como el codigo apropiado para errores semanticos (reglas de negocio), mientras que 400 corresponde a errores de sintaxis/malformacion. Se utiliza 422 para BusinessException y 409 para ConflictException. Ver documentacion de la decision en README. |
+| D-19 | Estado ATENDIDA para citas | El PDF de la prueba incluye ATENDIDA como estado valido en el filtro de listado de citas (RF-06). Se agrega al enum de dominio, al schema OpenAPI y al constraint CHECK de la BD. No se implementa transicion automatica a ATENDIDA (no hay endpoint para marcarla); queda como mejora futura agregar esa transicion. |
+| D-20 | Reprogramacion como cancel+create | La implementacion sigue el PDF (RN-06): cancelar cita original aplicando RN-05 si corresponde, validar nuevo horario con RN-01/RN-02/RN-04, bloquear paciente si excede limite de penalizaciones, y crear nueva cita con nuevo UUID. Operacion atomica en una sola transaccion. |
 
 ---
 
@@ -985,18 +990,16 @@ jobs:
 
 Las siguientes mejoras estan fuera del alcance de este incremento pero fueron identificadas como valiosas. El despliegue en AWS ECS Fargate es parte de los entregables del proyecto (ver seccion 12) y no se lista aqui.
 
-1. Estado ATENDIDA para citas.
-2. Paginacion en listados.
-3. Autenticacion y autorizacion (JWT/Keycloak).
-4. Notificaciones (email/SMS).
-5. Calendario de festivos configurable.
-6. Cancelacion masiva.
-7. Logs de auditoria.
-8. Internacionalizacion (i18n).
-9. Pruebas E2E con frontend.
-10. Frontend con React o Angular (interfaz de usuario para pacientes y administradores).
-11. Restringir CORS por origen en produccion (D-16).
-12. **Reprogramación como cancel+create:** Actualmente reprogramar modifica la cita in-place (mismo UUID). La especificación (RN-06) describe el flujo como cancelar la cita original + crear una nueva. Esto permitiría mantener un historial completo de reprogramaciones y aplicar correctamente penalizaciones por cancelación tardía durante la reprogramación.
+1. Paginacion en listados.
+2. Autenticacion y autorizacion (JWT/Keycloak).
+3. Notificaciones (email/SMS).
+4. Calendario de festivos configurable.
+5. Cancelacion masiva.
+6. Logs de auditoria.
+7. Internacionalizacion (i18n).
+8. Pruebas E2E con frontend.
+9. Frontend con React o Angular (interfaz de usuario para pacientes y administradores).
+10. Restringir CORS por origen en produccion (D-16).
 
 ---
 

@@ -1,0 +1,1139 @@
+openapi: 3.1.0
+info:
+  title: MediSalud Appointment API
+  description: |
+    API REST para el sistema de agendamiento de citas medicas de la clinica MediSalud.
+    Permite gestionar medicos, pacientes, citas, disponibilidad y festivos de Colombia.
+  version: 1.0.0
+  contact:
+    name: MediSalud Dev Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Medicos
+    description: Operaciones sobre medicos
+  - name: Pacientes
+    description: Operaciones sobre pacientes
+  - name: Citas
+    description: Operaciones sobre citas medicas
+  - name: Disponibilidad
+    description: Consulta de franjas horarias disponibles
+
+paths:
+  /api/v1/medicos:
+    post:
+      operationId: createMedico
+      tags:
+        - Medicos
+      summary: Registrar un nuevo medico
+      description: Crea un nuevo medico en el sistema con los datos proporcionados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicoRequest'
+            examples:
+              default:
+                value:
+                  nombre_completo: "Dra. Maria Gonzalez"
+                  especialidad: "Cardiologia"
+                  telefono: "555-1001"
+                  email: "maria.gonzalez@medisalud.com"
+      responses:
+        '201':
+          description: Medico creado exitosamente
+          headers:
+            Location:
+              description: URL del recurso creado
+              schema:
+                type: string
+                examples:
+                  - /api/v1/medicos/550e8400-e29b-41d4-a716-446655440000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicoResponse'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      operationId: listMedicos
+      tags:
+        - Medicos
+      summary: Listar todos los medicos
+      description: Retorna la lista completa de medicos registrados.
+      responses:
+        '200':
+          description: Lista de medicos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicoResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/medicos/{medicoId}:
+    get:
+      operationId: getMedico
+      tags:
+        - Medicos
+      summary: Consultar medico individual
+      description: Retorna los datos de un medico especifico por su ID.
+      parameters:
+        - $ref: '#/components/parameters/MedicoIdPath'
+      responses:
+        '200':
+          description: Datos del medico
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicoResponse'
+        '400':
+          description: ID invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Medico no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      operationId: updateMedico
+      tags:
+        - Medicos
+      summary: Actualizar datos de medico
+      description: Actualiza los datos de un medico existente.
+      parameters:
+        - $ref: '#/components/parameters/MedicoIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicoUpdateRequest'
+            examples:
+              default:
+                value:
+                  nombre_completo: "Dra. Maria Gonzalez Ruiz"
+                  especialidad: "Cardiologia Pediatrica"
+                  telefono: "555-1001"
+                  email: "maria.gonzalez@medisalud.com"
+      responses:
+        '200':
+          description: Medico actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicoResponse'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Medico no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/pacientes:
+    post:
+      operationId: createPaciente
+      tags:
+        - Pacientes
+      summary: Registrar un nuevo paciente
+      description: Crea un nuevo paciente en el sistema con los datos proporcionados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PacienteRequest'
+            examples:
+              default:
+                value:
+                  nombre_completo: "Juan Perez Garcia"
+                  documento_identidad: "1234567890"
+                  telefono: "3001234567"
+                  email: "juan.perez@email.com"
+                  birth_date: "1990-05-15"
+      responses:
+        '201':
+          description: Paciente creado exitosamente
+          headers:
+            Location:
+              description: URL del recurso creado
+              schema:
+                type: string
+                examples:
+                  - /api/v1/pacientes/550e8400-e29b-41d4-a716-446655440000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PacienteResponse'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Documento de identidad duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      operationId: listPacientes
+      tags:
+        - Pacientes
+      summary: Listar todos los pacientes
+      description: Retorna la lista completa de pacientes registrados.
+      responses:
+        '200':
+          description: Lista de pacientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PacienteResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/pacientes/{pacienteId}:
+    get:
+      operationId: getPaciente
+      tags:
+        - Pacientes
+      summary: Consultar paciente individual
+      description: Retorna los datos de un paciente especifico por su ID.
+      parameters:
+        - $ref: '#/components/parameters/PacienteIdPath'
+      responses:
+        '200':
+          description: Datos del paciente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PacienteResponse'
+        '400':
+          description: ID invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Paciente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      operationId: updatePaciente
+      tags:
+        - Pacientes
+      summary: Actualizar datos de paciente
+      description: Actualiza los datos de un paciente existente.
+      parameters:
+        - $ref: '#/components/parameters/PacienteIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PacienteUpdateRequest'
+            examples:
+              default:
+                value:
+                  nombre_completo: "Juan Perez Garcia"
+                  documento_identidad: "1234567890"
+                  telefono: "3001234567"
+                  email: "juan.perez.nuevo@email.com"
+                  birth_date: "1990-05-15"
+      responses:
+        '200':
+          description: Paciente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PacienteResponse'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Paciente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Documento de identidad duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/citas:
+    post:
+      operationId: createCita
+      tags:
+        - Citas
+      summary: Reservar una nueva cita
+      description: |
+        Crea una nueva cita medica validando las reglas de negocio:
+        franja horaria valida (RN-01), sin duplicidad de medico (RN-02),
+        sin conflicto de paciente (RN-04), sin bloqueo por penalizaciones (RN-05).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CitaRequest'
+            examples:
+              default:
+                value:
+                  paciente_id: "550e8400-e29b-41d4-a716-446655440001"
+                  medico_id: "550e8400-e29b-41d4-a716-446655440002"
+                  fecha_hora: "2026-07-21T09:00:00-05:00"
+      responses:
+        '201':
+          description: Cita creada exitosamente
+          headers:
+            Location:
+              description: URL del recurso creado
+              schema:
+                type: string
+                examples:
+                  - /api/v1/citas/550e8400-e29b-41d4-a716-446655440000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitaResponse'
+        '400':
+          description: Error de validacion de entrada (Bean Validation, JSON malformado)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: "Regla de negocio invalida (RN-01: franja horaria invalida, RN-03: fecha de nacimiento futura)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Paciente o medico no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Conflicto de horario (RN-02, RN-04) o paciente bloqueado (RN-05)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      operationId: listCitas
+      tags:
+        - Citas
+      summary: Listar citas con filtros opcionales
+      description: |
+        Retorna citas filtradas por medico, paciente, estado y/o rango de fechas.
+        Los filtros son combinables. Ordenamiento por fecha_hora descendente.
+      parameters:
+        - name: medico_id
+          in: query
+          required: false
+          description: Filtrar por ID de medico
+          schema:
+            type: string
+            format: uuid
+        - name: paciente_id
+          in: query
+          required: false
+          description: Filtrar por ID de paciente
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          required: false
+          description: Filtrar por estado de la cita
+          schema:
+            $ref: '#/components/schemas/EstadoCitaEnum'
+        - name: fecha_inicio
+          in: query
+          required: false
+          description: Fecha inicio del rango (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: fecha_fin
+          in: query
+          required: false
+          description: Fecha fin del rango (inclusive)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lista de citas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitaResponse'
+        '400':
+          description: Parametros invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/citas/{citaId}:
+    get:
+      operationId: getCita
+      tags:
+        - Citas
+      summary: Consultar cita individual
+      description: Retorna los datos de una cita especifica por su ID.
+      parameters:
+        - $ref: '#/components/parameters/CitaIdPath'
+      responses:
+        '200':
+          description: Datos de la cita
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitaResponse'
+        '400':
+          description: ID invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Cita no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: cancelCita
+      tags:
+        - Citas
+      summary: Cancelar una cita
+      description: |
+        Cancela una cita cambiando su estado a CANCELADA. Registra la fecha/hora de cancelacion.
+        Si la cancelacion es con 2 horas o menos de antelacion, se registra una penalizacion (RN-05).
+      parameters:
+        - $ref: '#/components/parameters/CitaIdPath'
+      responses:
+        '200':
+          description: Cita cancelada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitaResponse'
+        '404':
+          description: Cita no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Cita ya cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/citas/{citaId}/reprogramar:
+    post:
+      operationId: reprogramarCita
+      tags:
+        - Citas
+      summary: Reprogramar una cita existente
+      description: |
+        Reprograma una cita a un nuevo horario. Atomicamente cancela la cita original
+        (aplicando penalizacion si corresponde, RN-05) y crea una nueva cita validando
+        disponibilidad (RN-01, RN-02, RN-04). Si la nueva cita falla, la cancelacion se revierte.
+      parameters:
+        - $ref: '#/components/parameters/CitaIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReprogramarRequest'
+            examples:
+              default:
+                value:
+                  fecha_hora: "2026-07-22T10:00:00-05:00"
+      responses:
+        '200':
+          description: Cita reprogramada exitosamente (retorna la nueva cita)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitaResponse'
+        '400':
+          description: Error de validacion o regla de negocio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: "Regla de negocio invalida (RN-01: franja horaria invalida)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Cita, paciente o medico no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Cita ya cancelada, conflicto de horario o paciente bloqueado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/disponibilidad:
+    get:
+      operationId: consultarDisponibilidad
+      tags:
+        - Disponibilidad
+      summary: Consultar franjas horarias disponibles
+      description: |
+        Retorna las franjas de 30 minutos disponibles para un medico en un rango de fechas.
+        Excluye franjas ocupadas, domingos y festivos de Colombia.
+        Solo incluye franjas dentro del horario de atencion (Lun-Vie 08:00-18:00, Sab 08:00-13:00).
+      parameters:
+        - name: medico_id
+          in: query
+          required: true
+          description: ID del medico
+          schema:
+            type: string
+            format: uuid
+        - name: fecha_inicio
+          in: query
+          required: true
+          description: Fecha inicio del rango (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: fecha_fin
+          in: query
+          required: true
+          description: Fecha fin del rango (inclusive)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Franjas horarias disponibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisponibilidadResponse'
+        '400':
+          description: Parametros invalidos o rango de fechas incorrecto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Medico no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    MedicoIdPath:
+      name: medicoId
+      in: path
+      required: true
+      description: ID unico del medico
+      schema:
+        type: string
+        format: uuid
+
+    PacienteIdPath:
+      name: pacienteId
+      in: path
+      required: true
+      description: ID unico del paciente
+      schema:
+        type: string
+        format: uuid
+
+    CitaIdPath:
+      name: citaId
+      in: path
+      required: true
+      description: ID unico de la cita
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # ==================== MEDICOS ====================
+
+    MedicoRequest:
+      type: object
+      required:
+        - nombre_completo
+        - especialidad
+      properties:
+        nombre_completo:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Nombre completo del medico
+          examples:
+            - "Dra. Maria Gonzalez"
+        especialidad:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Especialidad medica
+          examples:
+            - "Cardiologia"
+        telefono:
+          type: [string, 'null']
+          minLength: 7
+          maxLength: 20
+          description: Telefono de contacto (minimo 7 caracteres si se provee)
+          examples:
+            - "555-1001"
+        email:
+          type: [string, 'null']
+          format: email
+          maxLength: 255
+          description: Correo electronico (formato valido si se provee)
+          examples:
+            - "maria.gonzalez@medisalud.com"
+
+    MedicoUpdateRequest:
+      type: object
+      required:
+        - nombre_completo
+        - especialidad
+      properties:
+        nombre_completo:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Nombre completo del medico
+          examples:
+            - "Dra. Maria Gonzalez Ruiz"
+        especialidad:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Especialidad medica
+          examples:
+            - "Cardiologia Pediatrica"
+        telefono:
+          type: [string, 'null']
+          minLength: 7
+          maxLength: 20
+          description: Telefono de contacto
+          examples:
+            - "555-1001"
+        email:
+          type: [string, 'null']
+          format: email
+          maxLength: 255
+          description: Correo electronico
+          examples:
+            - "maria.gonzalez@medisalud.com"
+
+    MedicoResponse:
+      type: object
+      required:
+        - id
+        - nombre_completo
+        - especialidad
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID unico del medico
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440000"
+        nombre_completo:
+          type: string
+          description: Nombre completo
+          examples:
+            - "Dra. Maria Gonzalez"
+        especialidad:
+          type: string
+          description: Especialidad medica
+          examples:
+            - "Cardiologia"
+        telefono:
+          type: [string, 'null']
+          description: Telefono de contacto
+          examples:
+            - "555-1001"
+        email:
+          type: [string, 'null']
+          description: Correo electronico
+          examples:
+            - "maria.gonzalez@medisalud.com"
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creacion
+          examples:
+            - "2026-07-17T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de ultima actualizacion
+          examples:
+            - "2026-07-17T10:00:00Z"
+
+    # ==================== PACIENTES ====================
+
+    PacienteRequest:
+      type: object
+      required:
+        - nombre_completo
+        - documento_identidad
+        - telefono
+        - email
+      properties:
+        nombre_completo:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Nombre completo del paciente
+          examples:
+            - "Juan Perez Garcia"
+        documento_identidad:
+          type: string
+          minLength: 7
+          maxLength: 20
+          description: Documento de identidad (unico en el sistema)
+          examples:
+            - "1234567890"
+        telefono:
+          type: string
+          minLength: 7
+          maxLength: 20
+          description: Telefono de contacto
+          examples:
+            - "3001234567"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Correo electronico
+          examples:
+            - "juan.perez@email.com"
+        birth_date:
+          type: [string, 'null']
+          format: date
+          description: Fecha de nacimiento (ISO 8601). No puede ser futura. Si no se provee, se asume edad 0.
+          examples:
+            - "1990-05-15"
+
+    PacienteUpdateRequest:
+      type: object
+      required:
+        - nombre_completo
+        - documento_identidad
+        - telefono
+        - email
+      properties:
+        nombre_completo:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Nombre completo del paciente
+          examples:
+            - "Juan Perez Garcia"
+        documento_identidad:
+          type: string
+          minLength: 7
+          maxLength: 20
+          description: Documento de identidad
+          examples:
+            - "1234567890"
+        telefono:
+          type: string
+          minLength: 7
+          maxLength: 20
+          description: Telefono de contacto
+          examples:
+            - "3001234567"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Correo electronico
+          examples:
+            - "juan.perez.nuevo@email.com"
+        birth_date:
+          type: [string, 'null']
+          format: date
+          description: Fecha de nacimiento
+          examples:
+            - "1990-05-15"
+
+    PacienteResponse:
+      type: object
+      required:
+        - id
+        - nombre_completo
+        - documento_identidad
+        - telefono
+        - email
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID unico del paciente
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440001"
+        nombre_completo:
+          type: string
+          description: Nombre completo
+          examples:
+            - "Juan Perez Garcia"
+        documento_identidad:
+          type: string
+          description: Documento de identidad
+          examples:
+            - "1234567890"
+        telefono:
+          type: string
+          description: Telefono de contacto
+          examples:
+            - "3001234567"
+        email:
+          type: string
+          description: Correo electronico
+          examples:
+            - "juan.perez@email.com"
+        birth_date:
+          type: [string, 'null']
+          format: date
+          description: Fecha de nacimiento
+          examples:
+            - "1990-05-15"
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creacion
+          examples:
+            - "2026-07-17T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de ultima actualizacion
+          examples:
+            - "2026-07-17T10:00:00Z"
+
+    # ==================== CITAS ====================
+
+    CitaRequest:
+      type: object
+      required:
+        - paciente_id
+        - medico_id
+        - fecha_hora
+      properties:
+        paciente_id:
+          type: string
+          format: uuid
+          description: ID del paciente
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440001"
+        medico_id:
+          type: string
+          format: uuid
+          description: ID del medico
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440002"
+        fecha_hora:
+          type: string
+          format: date-time
+          description: Fecha y hora de la cita (debe alinearse a franja de 30 min)
+          examples:
+            - "2026-07-21T09:00:00-05:00"
+
+    ReprogramarRequest:
+      type: object
+      required:
+        - fecha_hora
+      properties:
+        fecha_hora:
+          type: string
+          format: date-time
+          description: Nueva fecha y hora para la cita (debe alinearse a franja de 30 min)
+          examples:
+            - "2026-07-22T10:00:00-05:00"
+
+    CitaResponse:
+      type: object
+      required:
+        - id
+        - paciente_id
+        - medico_id
+        - fecha_hora
+        - estado
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID unico de la cita
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440003"
+        paciente_id:
+          type: string
+          format: uuid
+          description: ID del paciente
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440001"
+        medico_id:
+          type: string
+          format: uuid
+          description: ID del medico
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440002"
+        fecha_hora:
+          type: string
+          format: date-time
+          description: Fecha y hora de la cita
+          examples:
+            - "2026-07-21T09:00:00-05:00"
+        estado:
+          $ref: '#/components/schemas/EstadoCitaEnum'
+        motivo_cancelacion:
+          type: [string, 'null']
+          description: Motivo de cancelacion (solo si estado es CANCELADA)
+          examples:
+            - "Cancelado por el paciente"
+        fecha_cancelacion:
+          type: [string, 'null']
+          format: date-time
+          description: Fecha/hora de cancelacion (solo si estado es CANCELADA)
+          examples:
+            - "2026-07-20T15:30:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creacion
+          examples:
+            - "2026-07-17T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de ultima actualizacion
+          examples:
+            - "2026-07-17T10:00:00Z"
+
+    EstadoCitaEnum:
+      type: string
+      enum:
+        - PROGRAMADA
+        - CANCELADA
+      description: Estado de la cita medica
+
+    # ==================== DISPONIBILIDAD ====================
+
+    DisponibilidadResponse:
+      type: object
+      required:
+        - medico_id
+        - franjas
+      properties:
+        medico_id:
+          type: string
+          format: uuid
+          description: ID del medico consultado
+          examples:
+            - "550e8400-e29b-41d4-a716-446655440002"
+        franjas:
+          type: array
+          items:
+            $ref: '#/components/schemas/FranjaResponse'
+          description: Lista de franjas horarias disponibles
+
+    FranjaResponse:
+      type: object
+      required:
+        - inicio
+        - fin
+      properties:
+        inicio:
+          type: string
+          format: date-time
+          description: Inicio de la franja
+          examples:
+            - "2026-07-21T09:00:00-05:00"
+        fin:
+          type: string
+          format: date-time
+          description: Fin de la franja (inicio + 30 min)
+          examples:
+            - "2026-07-21T09:30:00-05:00"
+
+    # ==================== ERRORES ====================
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - code
+        - message
+        - path
+        - trace_id
+        - details
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Instante UTC del error
+          examples:
+            - "2026-07-17T10:30:00Z"
+        status:
+          type: integer
+          description: Codigo HTTP de estado
+          examples:
+            - 400
+        error:
+          type: string
+          description: Nombre estandar del status HTTP
+          examples:
+            - "BAD_REQUEST"
+        code:
+          type: string
+          description: Codigo interno estable del error
+          examples:
+            - "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+          examples:
+            - "The request contains invalid fields."
+        path:
+          type: string
+          description: Ruta del endpoint que genero el error
+          examples:
+            - "/api/v1/medicos"
+        trace_id:
+          type: string
+          description: Identificador unico de la traza
+          examples:
+            - "4f0f6d2c6b1d4c8a"
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorDetail'
+          description: Lista de detalles adicionales
+
+    ApiErrorDetail:
+      type: object
+      properties:
+        field:
+          type: [string, 'null']
+          description: Campo con error (si aplica)
+          examples:
+            - "nombre_completo"
+        code:
+          type: string
+          description: Codigo del error de campo
+          examples:
+            - "FIELD_INVALID"
+        message:
+          type: string
+          description: Mensaje del error de campo
+          examples:
+            - "must be between 3 and 100 characters"
+        rejected_value:
+          type: [string, 'null']
+          description: Valor rechazado (si no expone datos sensibles)
+          examples:
+            - "AB"
+
+  responses:
+    InternalServerError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          examples:
+            default:
+              value:
+                timestamp: "2026-07-17T10:30:00Z"
+                status: 500
+                error: "INTERNAL_SERVER_ERROR"
+                code: "INTERNAL_ERROR"
+                message: "An unexpected error occurred."
+                path: "/api/v1/medicos"
+                trace_id: "4f0f6d2c6b1d4c8a"
+                details: []

@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: ms-medical-appointment
+  profiles:
+    active: dev
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+# Nager.Date API configuration
+medisalud:
+  nager-date:
+    base-url: https://date.nager.at/api/v3
+    timeout-seconds: 5
+
+logging:
+  level:
+    root: INFO
+    com.medisalud.appointment: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN

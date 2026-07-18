@@ -55,12 +55,12 @@ La cobertura se evalua sobre el **codigo testable**, excluyendo clases que no co
 | Metrica | Resultado | Umbral |
 |---|---|---|
 | Instrucciones (líneas de codigo ejecutado) | **93%** | 85% |
-| Ramas (condiciones if/else, switch) | **79%** | - |
+| Ramas (condiciones if/else, switch) | **86%** | - |
 | Lineas | **95%** | - |
 | Metodos | **96%** | - |
 | Clases | **91%** | - |
 
-**176 tests automatizados**, 0 fallos, 0 ignorados.
+**184 tests automatizados**, 0 fallos, 0 ignorados.
 
 ### Exclusiones de JaCoCo
 
@@ -73,7 +73,7 @@ Se excluyen del analisis de cobertura las siguientes categorias por no contener 
 | Entidades JPA | `**/entity/**` | Mapeo de tablas sin logica de negocio |
 | Excepciones | `**/exception/**` | Clases simples con solo constructor |
 | Mappers MapStruct generados | `**/*MapperImpl*` | Codigo generado automaticamente por MapStruct |
-| Mappers de persistencia | `**/persistence/mapper/**` | Interfaces MapStruct que mapean Entity ↔ Domain (92 instrucciones, 0% cobertura por ser interfaces) |
+| Mappers de persistencia | `**/persistence/mapper/**` | Interfaces MapStruct que mapean Entity ↔ Domain sin logica de negocio verificable |
 | Enums de dominio | `**/domain/model/EstadoCita`, `**/domain/model/Especialidad` | Enumeraciones sin logica condicional |
 | Clase principal | `**/AppointmentApplication*` | Bootstrap de Spring Boot |
 | API generada por OpenAPI | `**/infrastructure/web/api/**` | Interfaces de controllers generadas automaticamente |
@@ -82,7 +82,7 @@ Se excluyen del analisis de cobertura las siguientes categorias por no contener 
 
 ## Tests
 
-El proyecto cuenta con **176 tests automatizados** (0 fallos, 0 ignorados, ejecucion en ~2.5s) organizados por tipo y capa:
+El proyecto cuenta con **184 tests automatizados** (0 fallos, 0 ignorados, ejecucion en ~2.8s) organizados por tipo y capa:
 
 ### Por tipo de prueba
 

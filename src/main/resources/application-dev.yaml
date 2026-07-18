@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/medisalud
+    url: jdbc:postgresql://postgres_cris:5432/ms-medical-appointment
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver

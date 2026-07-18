@@ -50,33 +50,70 @@ infrastructure (adaptadores: web, BD, clientes externos)
 
 ## Cobertura de Pruebas (JaCoCo)
 
-La cobertura se evalua sobre el codigo testable, excluyendo DTOs, config, entities, exceptions, mappers generados y clases de infraestructura generada.
+La cobertura se evalua sobre el **codigo testable**, excluyendo clases que no contienen logica de negocio verificable. El umbral minimo del **85%** en instrucciones se verifica en cada build mediante `jacocoTestCoverageVerification`.
 
 | Metrica | Resultado | Umbral |
 |---|---|---|
-| Instrucciones | **90%** | 85% |
-| Ramas | **76%** | - |
-| Lineas | **91%** | - |
+| Instrucciones (líneas de codigo ejecutado) | **93%** | 85% |
+| Ramas (condiciones if/else, switch) | **79%** | - |
+| Lineas | **95%** | - |
+| Metodos | **96%** | - |
+| Clases | **91%** | - |
 
-El umbral minimo del 85% en instrucciones se verifica en cada build mediante `jacocoTestCoverageVerification`.
+**176 tests automatizados**, 0 fallos, 0 ignorados.
 
-**Exclusiones:** `**/dto/**`, `**/config/**`, `**/entity/**`, `**/exception/**`, `**/*MapperImpl*`, `**/mapper/*Mapper`, `**/domain/model/EstadoCita`, `**/domain/model/Especialidad`, `**/AppointmentApplication*`, `**/infrastructure/web/api/**`
+### Exclusiones de JaCoCo
+
+Se excluyen del analisis de cobertura las siguientes categorias por no contener logica de negocio:
+
+| Categoria | Patron | Motivo |
+|---|---|---|
+| DTOs de API | `**/dto/**` | Clases de transporte de datos sin logica |
+| Configuraciones Spring | `**/config/**` | Beans y configuraciones del framework |
+| Entidades JPA | `**/entity/**` | Mapeo de tablas sin logica de negocio |
+| Excepciones | `**/exception/**` | Clases simples con solo constructor |
+| Mappers MapStruct generados | `**/*MapperImpl*` | Codigo generado automaticamente por MapStruct |
+| Mappers de persistencia | `**/persistence/mapper/**` | Interfaces MapStruct que mapean Entity ↔ Domain (92 instrucciones, 0% cobertura por ser interfaces) |
+| Enums de dominio | `**/domain/model/EstadoCita`, `**/domain/model/Especialidad` | Enumeraciones sin logica condicional |
+| Clase principal | `**/AppointmentApplication*` | Bootstrap de Spring Boot |
+| API generada por OpenAPI | `**/infrastructure/web/api/**` | Interfaces de controllers generadas automaticamente |
 
 ---
 
 ## Tests
 
-La solucion cuenta con **176 tests automatizados** (0 fallos, 0 ignorados, ejecucion en ~2.5s) distribuidos en:
+El proyecto cuenta con **176 tests automatizados** (0 fallos, 0 ignorados, ejecucion en ~2.5s) organizados por tipo y capa:
 
-- **Tests Unitarios (Dominio):** `src/test/java/.../domain/` — Validacion de reglas de negocio (RN-01 a RN-06), modelos de dominio (Cita, Medico, Paciente, FranjaHoraria, RegistroPenalizacion).
-- **Tests Unitarios (Aplicacion):** `src/test/java/.../application/` — Servicios de aplicacion con Mockito (CitaService, MedicoService, PacienteService).
-- **Tests de Integracion:** `src/test/java/.../infrastructure/` — Repositorios JPA con `@DataJpaTest`, controladores REST con `@WebMvcTest`, adaptadores de persistencia.
-- **Tests de Arquitectura:** `src/test/java/.../archunit/HexagonalArchitectureTest.java` — 6 reglas ArchUnit que verifican los boundaries hexagonales:
-  - Domain no depende de application ni infrastructure.
-  - Application no depende de infrastructure.
-  - Infrastructure depende de application (puertos).
-  - Los nombres de paquetes respetan la convencion hexagonal.
-- **Tests de GlobalExceptionHandler:** Cobertura completa del manejo global de errores con todas las excepciones del dominio (BusinessException, ConflictException, ResourceNotFoundException).
+### Por tipo de prueba
+
+| Tipo | Ubicacion | Framework | Proposito |
+|---|---|---|---|
+| **Unitarios (Dominio)** | `src/test/java/.../domain/` | JUnit 5 + AssertJ | Validar reglas de negocio RN-01 a RN-06, modelos y value objects |
+| **Unitarios (Aplicacion)** | `src/test/java/.../application/` | JUnit 5 + Mockito | Probar servicios con dependencias mockeadas |
+| **Integracion (Repositorios)** | `src/test/java/.../infrastructure/persistence/` | Spring Boot Test + DataJpaTest + H2 | Validar consultas JPA y migraciones Flyway |
+| **Integracion (Controladores)** | `src/test/java/.../infrastructure/web/` | Spring Boot Test + WebMvcTest | Validar endpoints HTTP, status codes y schemas ApiErrorResponse |
+| **Arquitectura** | `src/test/java/.../archunit/` | ArchUnit | Verificar boundaries hexagonales (6 reglas) |
+| **Cliente HTTP** | `src/test/java/.../infrastructure/client/` | JUnit 5 + MockRestServiceServer | Validar integracion con Nager.Date (fallback graceful, timeout) |
+
+### Cobertura por regla de negocio
+
+| Regla | Tests | Estado |
+|---|---|---|
+| RN-01 (Franjas horarias) | FranjaHorariaValidatorTest | ✅ |
+| RN-02 (No duplicidad medico) | CitaServiceTest | ✅ |
+| RN-03 (Fecha de nacimiento) | ValidadorReglasNegocioTest | ✅ |
+| RN-04 (Conflicto paciente) | CitaServiceTest | ✅ |
+| RN-05 (Penalizacion) | ValidadorReglasNegocioTest + CitaServiceTest | ✅ |
+| RN-06 (Reprogramacion) | CitaServiceTest | ✅ |
+
+### Tests de arquitectura (ArchUnit — 6 reglas)
+
+1. `domain` no depende de `infrastructure`, `application`, Spring, JPA ni Jackson.
+2. `domain` no contiene clases con anotaciones de framework (`@Entity`, `@Service`, `@Repository`, etc.).
+3. `application` no depende de `infrastructure`.
+4. Los controladores residen unicamente en `infrastructure.web`.
+5. Los casos de uso residen unicamente en `application.service`.
+6. Los puertos de salida residen unicamente en `application.port.output`.
 
 ---
 

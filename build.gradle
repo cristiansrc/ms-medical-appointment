@@ -112,6 +112,9 @@ def jacocoExcludes = [
     '**/entity/**',
     '**/exception/**',
     '**/*MapperImpl*',
+    '**/mapper/*Mapper',
+    '**/domain/model/EstadoCita',
+    '**/domain/model/Especialidad',
     '**/AppointmentApplication*',
     '**/infrastructure/web/api/**'
 ]

@@ -50,4 +50,45 @@ class CitaTest {
         cita.cancelar("Motivo");
         assertThrows(IllegalStateException.class, () -> cita.reprogramar(OffsetDateTime.now().plusDays(1)));
     }
+
+    @Test
+    @DisplayName("estaEnFranjaPenalizable true cuando falta menos de 2h")
+    void estaEnFranjaPenalizable_DentroDeRango() {
+        Cita cita = new Cita(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                OffsetDateTime.now().plusMinutes(30));
+        assertTrue(cita.estaEnFranjaPenalizable());
+    }
+
+    @Test
+    @DisplayName("estaEnFranjaPenalizable false cuando falta mas de 2h")
+    void estaEnFranjaPenalizable_FueraDeRango() {
+        Cita cita = new Cita(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                OffsetDateTime.now().plusHours(3));
+        assertFalse(cita.estaEnFranjaPenalizable());
+    }
+
+    @Test
+    @DisplayName("Constructor completo con todos los parametros")
+    void constructorCompleto() {
+        UUID id = UUID.randomUUID();
+        UUID pacienteId = UUID.randomUUID();
+        UUID medicoId = UUID.randomUUID();
+        OffsetDateTime fechaHora = OffsetDateTime.now();
+        OffsetDateTime fechaCancelacion = OffsetDateTime.now();
+        OffsetDateTime createdAt = OffsetDateTime.now().minusHours(1);
+        OffsetDateTime updatedAt = OffsetDateTime.now();
+
+        Cita cita = new Cita(id, pacienteId, medicoId, fechaHora, "CANCELADA",
+                "Motivo prueba", fechaCancelacion, createdAt, updatedAt);
+
+        assertEquals(id, cita.getId());
+        assertEquals(pacienteId, cita.getPacienteId());
+        assertEquals(medicoId, cita.getMedicoId());
+        assertEquals(fechaHora, cita.getFechaHora());
+        assertEquals("CANCELADA", cita.getEstado());
+        assertEquals("Motivo prueba", cita.getMotivoCancelacion());
+        assertEquals(fechaCancelacion, cita.getFechaCancelacion());
+        assertEquals(createdAt, cita.getCreatedAt());
+        assertEquals(updatedAt, cita.getUpdatedAt());
+    }
 }

@@ -2,9 +2,9 @@ package com.medisalud.appointment.infrastructure.web;
 
 import com.medisalud.appointment.application.port.input.CitaUseCase;
 import com.medisalud.appointment.domain.exception.BusinessException;
+import com.medisalud.appointment.domain.exception.ConflictException;
 import com.medisalud.appointment.domain.exception.ResourceNotFoundException;
 import com.medisalud.appointment.domain.model.Cita;
-import com.medisalud.appointment.infrastructure.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -70,5 +71,96 @@ class CitaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/citas/{id} cancela cita exitosamente")
+    void should_CancelCita_when_Exists() throws Exception {
+        UUID citaId = UUID.randomUUID();
+        Cita cita = new Cita(citaId, UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now().plusDays(1));
+        when(citaUseCase.cancelar(any(), any())).thenReturn(cita);
+
+        mockMvc.perform(delete("/api/v1/citas/" + citaId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/citas/{id}/reprogramar reprograma cita exitosamente")
+    void should_ReprogramarCita_when_Valid() throws Exception {
+        UUID citaId = UUID.randomUUID();
+        Cita cita = new Cita(citaId, UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now().plusDays(2));
+        when(citaUseCase.reprogramar(any(), any())).thenReturn(cita);
+
+        mockMvc.perform(post("/api/v1/citas/" + citaId + "/reprogramar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fecha_hora\":\"2026-07-22T10:00:00-05:00\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/citas/{id} con cita inexistente retorna 404")
+    void should_Return404_when_CitaNotFoundOnCancel() throws Exception {
+        UUID citaId = UUID.randomUUID();
+        when(citaUseCase.cancelar(any(), any()))
+                .thenThrow(new ResourceNotFoundException("Cita", citaId));
+
+        mockMvc.perform(delete("/api/v1/citas/" + citaId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/citas/{id} con cita ya cancelada retorna 422")
+    void should_Return422_when_AlreadyCancelled() throws Exception {
+        UUID citaId = UUID.randomUUID();
+        when(citaUseCase.cancelar(any(), any()))
+                .thenThrow(new BusinessException("ALREADY_CANCELLED", "La cita ya fue cancelada"));
+
+        mockMvc.perform(delete("/api/v1/citas/" + citaId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("ALREADY_CANCELLED"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/citas con conflicto de horario retorna 409")
+    void should_Return409_when_ConflictException() throws Exception {
+        when(citaUseCase.reservar(any(), any(), any()))
+                .thenThrow(new ConflictException("MEDICO_SLOT_CONFLICT", "Medico ocupado"));
+
+        mockMvc.perform(post("/api/v1/citas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"paciente_id\":\"" + UUID.randomUUID()
+                                + "\",\"medico_id\":\"" + UUID.randomUUID()
+                                + "\",\"fecha_hora\":\"2026-07-20T10:00:00-05:00\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("MEDICO_SLOT_CONFLICT"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/citas retorna lista de citas")
+    void should_ListCitas() throws Exception {
+        Cita cita = new Cita(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now());
+        when(citaUseCase.listarCitas(any(), any(), any(), any())).thenReturn(List.of(cita));
+
+        mockMvc.perform(get("/api/v1/citas")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].estado").value("PROGRAMADA"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/citas/{id} retorna cita cuando existe")
+    void should_GetCita_when_Exists() throws Exception {
+        UUID citaId = UUID.randomUUID();
+        Cita cita = new Cita(citaId, UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now());
+        when(citaUseCase.obtenerPorId(citaId)).thenReturn(cita);
+
+        mockMvc.perform(get("/api/v1/citas/" + citaId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(citaId.toString()));
     }
 }

@@ -87,4 +87,40 @@ class MedicoServiceTest {
         assertFalse(medico.isActivo());
         verify(medicoRepository).save(medico);
     }
+
+    @Test
+    @DisplayName("Eliminar medico inexistente lanza ResourceNotFoundException")
+    void eliminarMedicoInexistente() {
+        UUID id = UUID.randomUUID();
+        when(medicoRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> medicoService.eliminar(id));
+        verify(medicoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Actualizar medico exitosamente")
+    void actualizarMedico() {
+        UUID id = UUID.randomUUID();
+        Medico medico = new Medico(id, "Dr. Original", "Cardiologia", "555-0000", "original@test.com");
+        when(medicoRepository.findById(id)).thenReturn(Optional.of(medico));
+        when(medicoRepository.save(any(Medico.class))).thenAnswer(i -> i.getArgument(0));
+
+        Medico result = medicoService.actualizar(id, "Dr. Actualizado", "Pediatria", "555-1111", "actualizado@test.com");
+
+        assertEquals("Dr. Actualizado", result.getNombreCompleto());
+        assertEquals("Pediatria", result.getEspecialidad());
+        verify(medicoRepository).save(medico);
+    }
+
+    @Test
+    @DisplayName("Actualizar medico inexistente lanza ResourceNotFoundException")
+    void actualizarMedicoInexistente() {
+        UUID id = UUID.randomUUID();
+        when(medicoRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> medicoService.actualizar(id, "Dr. Test", "Cardiologia", null, null));
+        verify(medicoRepository, never()).save(any());
+    }
 }

@@ -68,6 +68,7 @@ public class Cita {
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
 
     public boolean estaEnFranjaPenalizable() {
-        return OffsetDateTime.now().minusHours(2).isBefore(fechaHora);
+        OffsetDateTime now = OffsetDateTime.now();
+        return fechaHora.isAfter(now) && fechaHora.isBefore(now.plusHours(2));
     }
 }

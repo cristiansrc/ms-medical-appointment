@@ -1,11 +1,12 @@
-package com.medisalud.appointment.application.service;
+package com.medisalud.appointment.infrastructure.service;
 
+import com.medisalud.appointment.application.port.output.FestivoCachePort;
 import com.medisalud.appointment.infrastructure.client.NagerDateClient;
 import com.medisalud.appointment.infrastructure.persistence.entity.FestivoEntity;
 import com.medisalud.appointment.infrastructure.persistence.repository.FestivoJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -13,9 +14,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
-public class FestivoCacheService {
+public class FestivoCacheService implements FestivoCachePort {
 
     private final FestivoJpaRepository festivoJpaRepository;
     private final NagerDateClient nagerDateClient;
@@ -24,6 +25,7 @@ public class FestivoCacheService {
      * Carga los festivos desde Nager.Date API a la BD si no existen para el año dado.
      * Se invoca bajo demanda (lazy/first-access).
      */
+    @Override
     @Transactional
     public List<LocalDate> cargarFestivosSiEsNecesario(int anio, String pais) {
         List<FestivoEntity> existentes = festivoJpaRepository.findByYear(anio);
@@ -62,6 +64,7 @@ public class FestivoCacheService {
     /**
      * Verifica si una fecha es festivo, cargando el cache si es necesario.
      */
+    @Override
     @Transactional
     public boolean esFestivo(LocalDate fecha) {
         // Verifica si existe en BD

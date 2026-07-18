@@ -20,7 +20,6 @@ class MedicoJpaRepositoryTest {
     @DisplayName("Guardar y encontrar medico por ID")
     void saveAndFindById() {
         MedicoEntity entity = new MedicoEntity();
-        entity.setId(UUID.randomUUID());
         entity.setNombreCompleto("Dr. Test");
         entity.setEspecialidad("Cardiologia");
 
@@ -36,12 +35,10 @@ class MedicoJpaRepositoryTest {
     @DisplayName("Listar todos los medicos")
     void findAll() {
         MedicoEntity e1 = new MedicoEntity();
-        e1.setId(UUID.randomUUID());
         e1.setNombreCompleto("Dr. Uno");
         e1.setEspecialidad("Cardiologia");
 
         MedicoEntity e2 = new MedicoEntity();
-        e2.setId(UUID.randomUUID());
         e2.setNombreCompleto("Dr. Dos");
         e2.setEspecialidad("Pediatria");
 

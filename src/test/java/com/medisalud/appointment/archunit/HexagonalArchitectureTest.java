@@ -16,7 +16,9 @@ class HexagonalArchitectureTest {
 
     @BeforeAll
     static void setup() {
-        classes = new ClassFileImporter().importPackages("com.medisalud.appointment");
+        // Importar solo clases de main para evitar que clases de test (ej. *ServiceTest en application.service)
+        // interfieran con reglas de naming convention
+        classes = new ClassFileImporter().importPath("build/classes/java/main");
     }
 
     @Test

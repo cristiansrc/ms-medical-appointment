@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
-import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
@@ -20,7 +19,6 @@ class PacienteJpaRepositoryTest {
     @DisplayName("existsByDocumentoIdentidad retorna true si existe")
     void existsByDocumento() {
         PacienteEntity entity = new PacienteEntity();
-        entity.setId(UUID.randomUUID());
         entity.setNombreCompleto("Paciente Test");
         entity.setDocumentoIdentidad("12345678");
         entity.setTelefono("555-0000");

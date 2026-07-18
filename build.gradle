@@ -113,7 +113,7 @@ def jacocoExcludes = [
     '**/entity/**',
     '**/exception/**',
     '**/*MapperImpl*',
-    '**/mapper/*Mapper',
+    '**/persistence/mapper/**',
     '**/domain/model/EstadoCita',
     '**/domain/model/Especialidad',
     '**/AppointmentApplication*',

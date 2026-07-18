@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,7 +67,7 @@ public final class ValidadorReglasNegocio {
      * RN-05: Verificar si una cancelacion es tardia (≤ 2h antes).
      */
     public static boolean esCancelacionTardia(OffsetDateTime fechaHoraCita) {
-        return OffsetDateTime.now().plusHours(2).isAfter(fechaHoraCita);
+        return OffsetDateTime.now(ZoneOffset.UTC).plusHours(2).isAfter(fechaHoraCita);
     }
 
     /**
@@ -81,7 +82,7 @@ public final class ValidadorReglasNegocio {
      */
     public static boolean esReprogramacionValida(OffsetDateTime nuevaFechaHora) {
         return esFranjaHorariaValida(nuevaFechaHora) && esFranjaDe30Minutos(nuevaFechaHora)
-                && nuevaFechaHora.isAfter(OffsetDateTime.now());
+                && nuevaFechaHora.isAfter(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     /**

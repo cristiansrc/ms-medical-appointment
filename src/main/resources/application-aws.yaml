@@ -31,6 +31,12 @@ management:
         include: health,info,metrics
   endpoint:
     health:
+      show-details: never
       probes:
         enabled: true
-      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

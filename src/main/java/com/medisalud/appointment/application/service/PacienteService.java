@@ -25,7 +25,7 @@ public class PacienteService implements PacienteUseCase {
     @Transactional
     public Paciente crear(String nombreCompleto, String documentoIdentidad, String telefono, String email, LocalDate fechaNacimiento) {
         if (pacienteRepository.existsByDocumentoIdentidad(documentoIdentidad)) {
-            throw new BusinessException("DUPLICATE_DOCUMENT", "Ya existe un paciente con el documento " + documentoIdentidad);
+            throw new BusinessException("DUPLICATE_DOCUMENT", "Ya existe un paciente con ese documento de identidad");
         }
         Paciente paciente = new Paciente(UUID.randomUUID(), nombreCompleto, documentoIdentidad, telefono, email, fechaNacimiento);
         Paciente saved = pacienteRepository.save(paciente);

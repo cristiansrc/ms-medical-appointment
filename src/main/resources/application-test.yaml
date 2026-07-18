@@ -16,8 +16,7 @@ spring:
     enabled: false
   h2:
     console:
-      enabled: true
-      path: /h2-console
+      enabled: false
 
 medisalud:
   nager-date:

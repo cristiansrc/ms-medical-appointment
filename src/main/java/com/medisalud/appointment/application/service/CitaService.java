@@ -72,7 +72,7 @@ public class CitaService implements CitaUseCase {
         }
 
         // RN-05: Verificar bloqueo por penalizaciones
-        OffsetDateTime treintaDiasAtras = OffsetDateTime.now().minusDays(30);
+        OffsetDateTime treintaDiasAtras = OffsetDateTime.now(ZoneOffset.UTC).minusDays(30);
         int penalizaciones = penalizacionRepository.countByPacienteIdAndFechaAfter(pacienteId, treintaDiasAtras);
         if (ValidadorReglasNegocio.excedeLimitePenalizaciones(penalizaciones)) {
             throw new BusinessException("BLOCKED_PATIENT",
@@ -86,7 +86,7 @@ public class CitaService implements CitaUseCase {
                 .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()));
         if (medicoOcupado) {
             throw new ConflictException("MEDICO_SLOT_CONFLICT",
-                    "El medico " + medico.getNombreCompleto() + " ya tiene una cita programada en esta franja horaria");
+                    "El medico no esta disponible en la franja solicitada");
         }
 
         // RN-04: Validar conflicto paciente

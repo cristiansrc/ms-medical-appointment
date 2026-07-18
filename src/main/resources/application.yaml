@@ -11,7 +11,7 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     deserialization:
-      fail-on-unknown-properties: false
+      fail-on-unknown-properties: true
   jpa:
     hibernate:
       ddl-auto: validate
@@ -36,6 +36,6 @@ medisalud:
 logging:
   level:
     root: INFO
-    com.medisalud.appointment: DEBUG
+    com.medisalud.appointment: WARN
     org.springframework.web: INFO
     org.hibernate.SQL: WARN

@@ -121,6 +121,107 @@ class ValidadorReglasNegocioTest {
     }
 
     @Nested
+    @DisplayName("RN-06: Reprogramacion valida")
+    class ReprogramacionTest {
+
+        @Test
+        @DisplayName("Reprogramacion con fecha valida")
+        void esReprogramacionValida_conFechaValida() {
+            OffsetDateTime fechaValida = OffsetDateTime.now().plusDays(2)
+                    .withHour(10).withMinute(0).withSecond(0).withNano(0);
+            assertTrue(ValidadorReglasNegocio.esReprogramacionValida(fechaValida));
+        }
+
+        @Test
+        @DisplayName("Reprogramacion con fecha en domingo")
+        void esReprogramacionValida_conDomingo() {
+            // Find next Sunday
+            OffsetDateTime domingo = OffsetDateTime.now().plusDays(1);
+            while (domingo.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                domingo = domingo.plusDays(1);
+            }
+            domingo = domingo.withHour(10).withMinute(0).withSecond(0).withNano(0);
+            assertFalse(ValidadorReglasNegocio.esReprogramacionValida(domingo));
+        }
+
+        @Test
+        @DisplayName("Reprogramacion con minuto no valido (no :00 ni :30)")
+        void esReprogramacionValida_conMinutoInvalido() {
+            OffsetDateTime fechaInvalida = OffsetDateTime.now().plusDays(2)
+                    .withHour(10).withMinute(15).withSecond(0).withNano(0);
+            assertFalse(ValidadorReglasNegocio.esReprogramacionValida(fechaInvalida));
+        }
+
+        @Test
+        @DisplayName("Reprogramacion con fecha pasada")
+        void esReprogramacionValida_conFechaPasada() {
+            OffsetDateTime fechaPasada = OffsetDateTime.now().minusDays(1)
+                    .withHour(10).withMinute(0).withSecond(0).withNano(0);
+            assertFalse(ValidadorReglasNegocio.esReprogramacionValida(fechaPasada));
+        }
+
+        @Test
+        @DisplayName("Reprogramacion con hora fuera del horario permitido")
+        void esReprogramacionValida_conHoraInvalida() {
+            OffsetDateTime fechaFueraHorario = OffsetDateTime.now().plusDays(2)
+                    .withHour(18).withMinute(0).withSecond(0).withNano(0);
+            assertFalse(ValidadorReglasNegocio.esReprogramacionValida(fechaFueraHorario));
+        }
+    }
+
+    @Nested
+    @DisplayName("RN-02: Disponibilidad del medico en franja")
+    class MedicoDisponibleTest {
+
+        @Test
+        @DisplayName("Medico disponible con mas de 30 min de diferencia")
+        void medicoDisponible_conDiferenciaMayor() {
+            OffsetDateTime nueva = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(0);
+            OffsetDateTime existente = OffsetDateTime.now().plusDays(1).withHour(11).withMinute(0);
+            assertTrue(ValidadorReglasNegocio.medicoDisponibleEnFranja(nueva, existente));
+        }
+
+        @Test
+        @DisplayName("Medico disponible con exactamente 30 min de diferencia")
+        void medicoDisponible_conExactamente30Min() {
+            OffsetDateTime nueva = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(0);
+            OffsetDateTime existente = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(30);
+            assertTrue(ValidadorReglasNegocio.medicoDisponibleEnFranja(nueva, existente));
+        }
+
+        @Test
+        @DisplayName("Medico NO disponible con menos de 30 min de diferencia")
+        void medicoNoDisponible_conMenosDe30Min() {
+            OffsetDateTime nueva = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(0);
+            OffsetDateTime existente = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(15);
+            assertFalse(ValidadorReglasNegocio.medicoDisponibleEnFranja(nueva, existente));
+        }
+
+        @Test
+        @DisplayName("Medico NO disponible con misma hora exacta")
+        void medicoNoDisponible_conMismaHora() {
+            OffsetDateTime mismaFecha = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(0);
+            assertFalse(ValidadorReglasNegocio.medicoDisponibleEnFranja(mismaFecha, mismaFecha));
+        }
+
+        @Test
+        @DisplayName("Paciente disponible usa la misma logica que medico")
+        void pacienteDisponibleEnFranja() {
+            OffsetDateTime nueva = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(0);
+            OffsetDateTime existente = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(30);
+            assertTrue(ValidadorReglasNegocio.pacienteDisponibleEnFranja(nueva, existente));
+        }
+
+        @Test
+        @DisplayName("Paciente NO disponible con menos de 30 min")
+        void pacienteNoDisponible() {
+            OffsetDateTime nueva = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(0);
+            OffsetDateTime existente = OffsetDateTime.now().plusDays(1).withHour(10).withMinute(10);
+            assertFalse(ValidadorReglasNegocio.pacienteDisponibleEnFranja(nueva, existente));
+        }
+    }
+
+    @Nested
     @DisplayName("Dias festivos y habiles")
     class FestivoTest {
 

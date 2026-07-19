@@ -120,6 +120,22 @@ El telefono de medicos y pacientes se almacena **solo con digitos** (sin guiones
 
 **Regla:** Solo se persisten los digitos (0-9). Cualquier otro caracter es rechazado en la API o eliminado en el servicio.
 
+### ¿Por que UUID v4 generado por la aplicacion con Persistable?
+
+Los IDs de todas las entidades usan **UUID v4 generado por la aplicacion** (`UUID.randomUUID()` en el dominio) y las entidades JPA implementan `Persistable<UUID>` porque:
+
+- **Descentralizacion:** No depende de secuencias de base de datos ni de generadores externos. Cualquier capa puede crear una entidad con su ID antes de persistirla.
+- **Compatibilidad REST:** Los UUIDs son ideales para URLs de recursos REST (`/api/v1/medicos/{id}`) porque no exponen informacion secuencial ni son adivinables.
+- **Arquitectura Hexagonal:** El dominio genera el ID antes de llamar al repositorio, lo que permite trabajar con entidades completamente formadas sin depender de la infraestructura de persistencia.
+- **Persistable flag:** Spring Data JPA usa el metodo `isNew()` de `Persistable` para determinar si una entidad es nueva (debe hacer `persist()`) o existente (debe hacer `merge()`). El flag `@Transient @Builder.Default private boolean isNew = true;` se inicializa en `true` para nuevas entidades y se cambia a `false` con `@PrePersist`/`@PostLoad` despues de la insercion o al cargar desde BD.
+- **Eliminacion de @GeneratedValue:** Se removio `@GeneratedValue(strategy = GenerationType.UUID)` de las entidades porque el ID ya lo asigna el dominio. Esto evita que Hibernate confunda entidades nuevas con detached y lance `StaleObjectStateException`.
+
+**Flujo de creacion:**
+
+```
+domain: new Medico(UUID.randomUUID(), ...) → adapter: mapper.toEntity(dom) → entity con ID + isNew=true → jpaRepository.save() → persist() (no merge) → @PrePersist marca isNew=false
+```
+
 ---
 
 ---

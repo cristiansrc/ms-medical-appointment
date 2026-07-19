@@ -6,8 +6,8 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 
 ## Tabla de Contenido
 
-- [Tecnologias](#tecnologias)
 - [Spec Driven Development](#spec-driven-development)
+- [Tecnologias](#tecnologias)
 - [Arquitectura](#arquitectura)
 - [Decisiones Tecnicas](#decisiones-tecnicas)
 - [Cobertura de Pruebas (JaCoCo)](#cobertura-de-pruebas-jacoco)
@@ -184,9 +184,7 @@ Se creo una funcion y triggers en PostgreSQL (`V1.0.6__create_trigger_updated_at
 **Regla:** `ValidadorReglasNegocio` solo importa `java.*`. Ninguna anotacion de framework, ninguna dependencia externa. Solo reglas de negocio puras.
 
 ---
-
----
-
+ 
 ## Cobertura de Pruebas (JaCoCo)
 
 La cobertura se evalua sobre el **codigo testable**, excluyendo clases que no contienen logica de negocio verificable. El umbral minimo del **85%** en instrucciones se verifica en cada build mediante `jacocoTestCoverageVerification`.

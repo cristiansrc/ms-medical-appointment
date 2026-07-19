@@ -494,6 +494,9 @@ Estas mejoras estan fuera del alcance del MVP actual pero fueron identificadas c
 6. **Logs de auditoria** — Registro de todas las operaciones.
 7. **Restringir CORS** — Configurar origenes permitidos por perfil.
 8. **Pruebas E2E** — Con frontend o herramientas como Postman/Newman.
+9. **Solución óptima para race condition en reserva de citas** — La solución actual usa un índice único parcial (`UNIQUE INDEX ... WHERE estado = 'PROGRAMADA'`) que previene doble reserva a nivel de BD. Para escenarios de ultra-alta concurrencia, se recomienda implementar `pg_advisory_xact_lock(hashtext(medico_id || '-' || fecha_hora))` antes de la validación y el INSERT. Esto serializa las requests del mismo slot sin necesidad de capturar excepciones de integridad. Ver `docs/specs/master-spec.md` D-20 para más detalles.
+
+10. **Internacionalizacion de zona horaria** — La aplicacion actualmente normaliza todas las validaciones de horario a Colombia (UTC-5) de forma fija. Para soportar múltiples zonas horarias en el futuro, se recomienda almacenar la preferencia del medico o la clinica y normalizar dinamicamente segun corresponda. Incluir en el contrato OpenAPI un campo opcional `zona_horaria` en los requests de creacion de citas.
 
 ---
 

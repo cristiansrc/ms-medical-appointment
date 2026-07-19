@@ -59,8 +59,8 @@ public class CitaService implements CitaUseCase {
             throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos (minutos 0 o 30)");
         }
 
-        // RN-01b: No domingos ni festivos
-        LocalDate fechaLocal = fechaHora.toLocalDate();
+        // RN-01b: No domingos ni festivos (normalizado a hora Colombia)
+        LocalDate fechaLocal = fechaHora.withOffsetSameInstant(ValidadorReglasNegocio.getColombiaOffset()).toLocalDate();
         if (festivoRepository.esFestivo(fechaLocal)) {
             throw new BusinessException("INVALID_SLOT", "No se pueden agendar citas en dias festivos");
         }
@@ -158,8 +158,8 @@ public class CitaService implements CitaUseCase {
             throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos");
         }
 
-        // RN-01b: Validar que la nueva fecha no sea festivo
-        LocalDate nuevaFechaLocal = nuevaFechaHora.toLocalDate();
+        // RN-01b: Validar que la nueva fecha no sea festivo (normalizado a hora Colombia)
+        LocalDate nuevaFechaLocal = nuevaFechaHora.withOffsetSameInstant(ValidadorReglasNegocio.getColombiaOffset()).toLocalDate();
         if (festivoRepository.esFestivo(nuevaFechaLocal)) {
             throw new BusinessException("INVALID_SLOT", "No se pueden agendar citas en dias festivos");
         }

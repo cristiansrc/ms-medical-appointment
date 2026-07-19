@@ -15,22 +15,30 @@ import java.util.UUID;
  */
 public final class ValidadorReglasNegocio {
 
+    private static final ZoneOffset COLOMBIA_OFFSET = ZoneOffset.ofHours(-5);
+
     private ValidadorReglasNegocio() {}
 
     /**
      * RN-01: Lun-Vie 08:00-18:00 (ultima franja 17:30), Sab 08:00-13:00 (ultima franja 12:30), Dom/festivos sin atencion.
+     * Normaliza a hora Colombia (UTC-5) independientemente del offset que envie el cliente.
      */
     public static boolean esFranjaHorariaValida(OffsetDateTime fechaHora) {
-        DayOfWeek dia = fechaHora.getDayOfWeek();
+        OffsetDateTime colombiaTime = fechaHora.withOffsetSameInstant(COLOMBIA_OFFSET);
+        DayOfWeek dia = colombiaTime.getDayOfWeek();
         if (dia == DayOfWeek.SUNDAY) return false;
 
-        LocalTime hora = fechaHora.toLocalTime();
+        LocalTime hora = colombiaTime.toLocalTime();
         if (dia == DayOfWeek.SATURDAY) {
             // Sabado: 08:00 - 13:00 (ultima franja 12:30)
             return !hora.isBefore(LocalTime.of(8, 0)) && !hora.isAfter(LocalTime.of(12, 30));
         }
         // Lunes a Viernes: 08:00 - 18:00 (ultima franja 17:30)
         return !hora.isBefore(LocalTime.of(8, 0)) && !hora.isAfter(LocalTime.of(17, 30));
+    }
+
+    public static ZoneOffset getColombiaOffset() {
+        return COLOMBIA_OFFSET;
     }
 
     /**

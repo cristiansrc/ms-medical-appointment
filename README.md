@@ -171,6 +171,18 @@ Se creo una funcion y triggers en PostgreSQL (`V1.0.6__create_trigger_updated_at
 
 **Regla:** `@UpdateTimestamp` para el dia a dia via JPA. Triggers de BD como red de seguridad en produccion.
 
+### ¿Por que ValidadorReglasNegocio vive en el dominio?
+
+`ValidadorReglasNegocio` es una clase **final** con **metodos estaticos puros** (`public static boolean`) ubicada en el paquete `domain.service`. Se tomo esta decision arquitectonica por:
+
+- **Reglas de negocio en su lugar natural:** Las reglas RN-01 a RN-06 son parte del lenguaje ubiquo del dominio. Colocarlas en `domain.service` las mantiene cerca de los modelos de negocio (`Cita`, `Medico`, `Paciente`) y visibles para cualquier capa que las necesite.
+- **Cero dependencias de framework:** La clase solo importa tipos de `java.time` y `java.util`. No usa Spring, JPA, Jackson ni ninguna otra dependencia de infraestructura. Esto garantiza que las reglas de negocio son 100% portables y testeables sin contexto de framework.
+- **Arquitectura Hexagonal:** Cumple la regla ArchUnit #1: `domain` no depende de `infrastructure`, `application`, Spring, JPA ni Jackson. La clase es un **servicio de dominio puro** que puede ser llamado desde los casos de uso (`application.service`) sin acoplar el dominio a la infraestructura.
+- **Testeable sin Spring:** Al ser metodos estaticos puros, los tests unitarios (`ValidadorReglasNegocioTest`) se ejecutan con JUnit 5 + AssertJ, sin necesidad de levantar contexto Spring, lo que los hace ultra-rapidos (~2.5s para 184 tests).
+- **Estado global cero:** Al ser metodos estaticos sin estado mutable, la clase es inherentemente thread-safe y no requiere sincronizacion.
+
+**Regla:** `ValidadorReglasNegocio` solo importa `java.*`. Ninguna anotacion de framework, ninguna dependencia externa. Solo reglas de negocio puras.
+
 ---
 
 ---

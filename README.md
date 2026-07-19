@@ -136,6 +136,16 @@ Los IDs de todas las entidades usan **UUID v4 generado por la aplicacion** (`UUI
 domain: new Medico(UUID.randomUUID(), ...) → adapter: mapper.toEntity(dom) → entity con ID + isNew=true → jpaRepository.save() → persist() (no merge) → @PrePersist marca isNew=false
 ```
 
+### ¿Por que triggers de base de datos para updated_at?
+
+Se creo una funcion y triggers en PostgreSQL (`V1.0.6__create_trigger_updated_at.sql`) para actualizar automaticamente la columna `updated_at` en todas las tablas:
+
+- **Doble capa de seguridad:** La aplicacion usa `@UpdateTimestamp` de Hibernate para mantener `updated_at` al guardar via JPA. Los triggers de BD actuan como respaldo ante actualizaciones directas en la base de datos (consola, pgadmin, scripts).
+- **Consistencia en produccion:** Si un operador modifica datos directamente en PostgreSQL, el `updated_at` se actualiza automaticamente sin depender de la aplicacion.
+- **Compatibilidad con H2 en tests:** Flyway esta deshabilitado en el perfil `test` (`spring.flyway.enabled=false`) y JPA usa `ddl-auto=create-drop`. Los triggers de PostgreSQL nunca se ejecutan en H2, por lo que no afectan los tests de integracion.
+
+**Regla:** `@UpdateTimestamp` para el dia a dia via JPA. Triggers de BD como red de seguridad en produccion.
+
 ---
 
 ---

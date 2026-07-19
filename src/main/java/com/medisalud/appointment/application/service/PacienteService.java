@@ -21,13 +21,18 @@ public class PacienteService implements PacienteUseCase {
 
     private final PacienteRepository pacienteRepository;
 
+    private String sanitizarTelefono(String telefono) {
+        if (telefono == null) return null;
+        return telefono.replaceAll("\\D", "");
+    }
+
     @Override
     @Transactional
     public Paciente crear(String nombreCompleto, String documentoIdentidad, String telefono, String email, LocalDate fechaNacimiento) {
         if (pacienteRepository.existsByDocumentoIdentidad(documentoIdentidad)) {
             throw new BusinessException("DUPLICATE_DOCUMENT", "Ya existe un paciente con ese documento de identidad");
         }
-        Paciente paciente = new Paciente(UUID.randomUUID(), nombreCompleto, documentoIdentidad, telefono, email, fechaNacimiento);
+        Paciente paciente = new Paciente(UUID.randomUUID(), nombreCompleto, documentoIdentidad, sanitizarTelefono(telefono), email, fechaNacimiento);
         Paciente saved = pacienteRepository.save(paciente);
         log.info("Paciente created: {} ({})", saved.getId(), saved.getNombreCompleto());
         return saved;
@@ -38,7 +43,7 @@ public class PacienteService implements PacienteUseCase {
     public Paciente actualizar(UUID id, String nombreCompleto, String telefono, String email, LocalDate fechaNacimiento) {
         Paciente paciente = pacienteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente", id));
-        paciente.actualizar(nombreCompleto, telefono, email, fechaNacimiento);
+        paciente.actualizar(nombreCompleto, sanitizarTelefono(telefono), email, fechaNacimiento);
         Paciente saved = pacienteRepository.save(paciente);
         log.info("Paciente updated: {}", saved.getId());
         return saved;

@@ -19,10 +19,15 @@ public class MedicoService implements MedicoUseCase {
 
     private final MedicoRepository medicoRepository;
 
+    private String sanitizarTelefono(String telefono) {
+        if (telefono == null) return null;
+        return telefono.replaceAll("\\D", "");
+    }
+
     @Override
     @Transactional
     public Medico crear(String nombreCompleto, String especialidad, String telefono, String email) {
-        Medico medico = new Medico(UUID.randomUUID(), nombreCompleto, especialidad, telefono, email);
+        Medico medico = new Medico(UUID.randomUUID(), nombreCompleto, especialidad, sanitizarTelefono(telefono), email);
         Medico saved = medicoRepository.save(medico);
         log.info("Medico created: {} ({})", saved.getId(), saved.getNombreCompleto());
         return saved;
@@ -33,7 +38,7 @@ public class MedicoService implements MedicoUseCase {
     public Medico actualizar(UUID id, String nombreCompleto, String especialidad, String telefono, String email) {
         Medico medico = medicoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Medico", id));
-        medico.actualizar(nombreCompleto, especialidad, telefono, email);
+        medico.actualizar(nombreCompleto, especialidad, sanitizarTelefono(telefono), email);
         Medico saved = medicoRepository.save(medico);
         log.info("Medico updated: {}", saved.getId());
         return saved;

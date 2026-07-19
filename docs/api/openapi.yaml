@@ -9,7 +9,7 @@ info:
     name: MediSalud Dev Team
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8081
     description: Local development server
 
 tags:
@@ -41,7 +41,7 @@ paths:
                 value:
                   nombre_completo: "Dra. Maria Gonzalez"
                   especialidad: "Cardiologia"
-                  telefono: "555-1001"
+                  telefono: "5551001"
                   email: "maria.gonzalez@medisalud.com"
       responses:
         '201':
@@ -132,7 +132,7 @@ paths:
                 value:
                   nombre_completo: "Dra. Maria Gonzalez Ruiz"
                   especialidad: "Cardiologia Pediatrica"
-                  telefono: "555-1001"
+                  telefono: "5551001"
                   email: "maria.gonzalez@medisalud.com"
       responses:
         '200':
@@ -652,11 +652,12 @@ components:
             - "Cardiologia"
         telefono:
           type: [string, 'null']
+          pattern: '^\d{7,20}$'
           minLength: 7
           maxLength: 20
-          description: Telefono de contacto (minimo 7 caracteres si se provee)
+          description: Telefono de contacto (solo digitos, minimo 7 caracteres)
           examples:
-            - "555-1001"
+            - "5551001"
         email:
           type: [string, 'null']
           format: email
@@ -687,11 +688,12 @@ components:
             - "Cardiologia Pediatrica"
         telefono:
           type: [string, 'null']
+          pattern: '^\d{7,20}$'
           minLength: 7
           maxLength: 20
-          description: Telefono de contacto
+          description: Telefono de contacto (solo digitos, minimo 7 caracteres)
           examples:
-            - "555-1001"
+            - "5551001"
         email:
           type: [string, 'null']
           format: email
@@ -727,9 +729,9 @@ components:
             - "Cardiologia"
         telefono:
           type: [string, 'null']
-          description: Telefono de contacto
+          description: Telefono de contacto (solo digitos)
           examples:
-            - "555-1001"
+            - "5551001"
         email:
           type: [string, 'null']
           description: Correo electronico
@@ -774,9 +776,10 @@ components:
             - "1234567890"
         telefono:
           type: string
+          pattern: '^\d{7,20}$'
           minLength: 7
           maxLength: 20
-          description: Telefono de contacto
+          description: Telefono de contacto (solo digitos, minimo 7 caracteres)
           examples:
             - "3001234567"
         email:
@@ -817,9 +820,10 @@ components:
             - "1234567890"
         telefono:
           type: string
+          pattern: '^\d{7,20}$'
           minLength: 7
           maxLength: 20
-          description: Telefono de contacto
+          description: Telefono de contacto (solo digitos, minimo 7 caracteres)
           examples:
             - "3001234567"
         email:
@@ -865,7 +869,7 @@ components:
             - "1234567890"
         telefono:
           type: string
-          description: Telefono de contacto
+          description: Telefono de contacto (solo digitos)
           examples:
             - "3001234567"
         email:

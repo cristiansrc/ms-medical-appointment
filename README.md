@@ -109,6 +109,17 @@ Se creo un manejador global de excepciones con `@RestControllerAdvice` porque:
 - **Cobertura total:** Cualquier excepcion no esperada es capturada por el handler generico (`Exception.class`) que devuelve 500 Internal Server Error sin exponer detalles internos.
 - **Trace ID:** Cada error incluye un `trace_id` unico (UUID) que permite correlacionar errores en los logs sin exponer informacion sensible.
 
+### ¿Por que el telefono solo acepta digitos?
+
+El telefono de medicos y pacientes se almacena **solo con digitos** (sin guiones, espacios, ni caracteres especiales) porque:
+
+- **Dato limpio:** Almacenar solo digitos facilita busquedas, comparaciones y futuras integraciones con servicios de mensajeria (SMS, WhatsApp).
+- **Formato desacoplado:** El frontend es responsable de formatear el numero para visualizacion (ej: "300 123 4567" o "+57 3001234567"). El backend guarda la representacion canonica.
+- **Validacion en API:** El contrato OpenAPI define `pattern: '^\d{7,20}$'` para que la validacion ocurra en la capa HTTP (via Bean Validation) antes de llegar al servicio.
+- **Defensa en profundidad:** Los servicios (`MedicoService`, `PacienteService`) aplican `replaceAll("\\D", "")` para eliminar cualquier caracter no numerico antes de persistir, como capa adicional de seguridad.
+
+**Regla:** Solo se persisten los digitos (0-9). Cualquier otro caracter es rechazado en la API o eliminado en el servicio.
+
 ---
 
 ---

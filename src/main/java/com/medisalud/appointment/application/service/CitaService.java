@@ -9,6 +9,7 @@ import com.medisalud.appointment.application.port.output.PenalizacionRepository;
 import com.medisalud.appointment.domain.exception.BusinessException;
 import com.medisalud.appointment.domain.exception.ConflictException;
 import com.medisalud.appointment.domain.exception.ResourceNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.medisalud.appointment.domain.model.Cita;
 import com.medisalud.appointment.domain.model.FranjaHoraria;
 import com.medisalud.appointment.domain.model.Medico;
@@ -98,7 +99,14 @@ public class CitaService implements CitaUseCase {
 
         // Crear cita
         Cita cita = new Cita(UUID.randomUUID(), pacienteId, medicoId, fechaHora);
-        Cita saved = citaRepository.save(cita);
+        Cita saved;
+        try {
+            saved = citaRepository.save(cita);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Race condition detected: slot already booked for medico {} at {}", medicoId, fechaHora);
+            throw new ConflictException("MEDICO_SLOT_CONFLICT",
+                    "La franja solicitada acaba de ser reservada por otro usuario");
+        }
         log.info("Cita creada: {} - Paciente: {} - Medico: {} - Fecha: {}",
                 saved.getId(), pacienteId, medicoId, fechaHora);
         return saved;

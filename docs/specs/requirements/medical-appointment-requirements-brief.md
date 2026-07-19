@@ -3,7 +3,7 @@
 > **Status:** `ready-for-planner`
 > **Incremento:** medical-appointment
 > **Fecha de creación:** 2026-07-17
-> **Última actualización:** 2026-07-17
+> **Última actualización:** 2026-07-18
 > **Autor:** requirements-analyst
 
 ---
@@ -59,13 +59,13 @@ Java 21, Spring Boot 3.x, Gradle, PostgreSQL, JPA/Hibernate (validate), UUID, Ar
 
 ### 4.1 Registro de Médicos (RF-01)
 
-- Crear un médico con: ID (UUID), nombre completo (obligatorio, 3-100 caracteres), especialidad (obligatorio), teléfono (opcional, mínimo 7 caracteres/dígitos), email (opcional, formato válido).
+- Crear un médico con: ID (UUID), nombre completo (obligatorio, 3-100 caracteres), especialidad (obligatorio), teléfono (opcional, solo dígitos, mínimo 7 caracteres), email (opcional, formato válido).
 - El ID es generado por el sistema.
-- El teléfono se almacena en el formato exacto recibido (no se transforma). Solo se valida que tenga al menos 7 caracteres/dígitos.
+- El teléfono se almacena solo con dígitos (se eliminan automáticamente guiones, espacios y cualquier carácter no numérico). Debe tener al menos 7 dígitos.
 
 ### 4.2 Registro de Pacientes (RF-02)
 
-- Crear un paciente con: ID (UUID), nombre completo (obligatorio, 3-100 caracteres), documento de identidad (obligatorio, único, mínimo 7 caracteres), teléfono (obligatorio, mínimo 7 dígitos), email (obligatorio, formato válido), **fecha de nacimiento** (opcional, formato ISO 8601 date — `YYYY-MM-DD`).
+- Crear un paciente con: ID (UUID), nombre completo (obligatorio, 3-100 caracteres), documento de identidad (obligatorio, único, mínimo 7 caracteres), teléfono (obligatorio, solo dígitos, mínimo 7 caracteres), email (obligatorio, formato válido), **fecha de nacimiento** (opcional, formato ISO 8601 date — `YYYY-MM-DD`).
 - El documento de identidad debe ser único en todo el sistema.
 - La fecha de nacimiento cumple RN-03: no puede ser futura; si no se provee, se asume edad 0.
 
@@ -240,7 +240,7 @@ Tres médicos para carga inicial:
 | ID | Identificador único | Sí (generado) | UUID |
 | Nombre completo | Nombre del médico | Sí | 3-100 caracteres |
 | Especialidad | Área médica | Sí | Ej: Cardiología, Pediatría, Dermatología |
-| Teléfono | Número de contacto | No | Mínimo 7 caracteres/dígitos. Se almacena en el formato exacto recibido (no se transforma). |
+| Teléfono | Número de contacto | No | Mínimo 7 dígitos. Solo se almacenan caracteres numéricos (se eliminan guiones, espacios, etc.). |
 | Email | Correo electrónico | No | Formato email válido |
 
 ### 7.2 Paciente
@@ -250,7 +250,7 @@ Tres médicos para carga inicial:
 | ID | Identificador único | Sí (generado) | UUID |
 | Nombre completo | Nombre del paciente | Sí | 3-100 caracteres |
 | Documento de identidad | Identificación oficial | Sí | Único, mínimo 7 caracteres |
-| Teléfono | Número de contacto | Sí | Mínimo 7 dígitos |
+| Teléfono | Número de contacto | Sí | Mínimo 7 dígitos. Solo se almacenan caracteres numéricos. |
 | Email | Correo electrónico | Sí | Formato email válido |
 | Fecha de nacimiento | Fecha de nacimiento del paciente | No | Formato ISO 8601 date (`YYYY-MM-DD`). No puede ser futura (RN-03). Si no se provee, se asume edad 0. |
 
@@ -339,7 +339,7 @@ Tres médicos para carga inicial:
 | Bloqueo por penalizaciones | 3+ penalizaciones en 30 días bloquea nuevo agendamiento. |
 | Paciente/Médico existente | Al crear una cita, tanto `pacienteId` como `medicoId` deben existir. Si no, 404 Not Found. |
 | Fecha de nacimiento no futura | La fecha de nacimiento del paciente no puede ser una fecha futura (RN-03). |
-| Teléfono médico | Mínimo 7 caracteres/dígitos. Se almacena tal cual se recibe. |
+| Teléfono médico | Mínimo 7 dígitos. Solo se almacenan caracteres numéricos (se eliminan guiones, espacios). |
 
 ### 9.3 Manejo de Errores
 
@@ -396,8 +396,8 @@ Tres médicos para carga inicial:
 | EC-22 | Cancelar cita inexistente por ID | Retornar 404 Not Found. |
 | EC-23 | Actualizar médico/paciente inexistente | Retornar 404 Not Found. |
 | EC-24 | API de Nager.Date no disponible y no hay festivos en BD | Manejar gracefully: registrar en log y definir comportamiento (rechazar operación o asumir sin festivos). |
-| EC-25 | Registrar médico con teléfono de menos de 7 caracteres | Rechazar con error de validación. |
-| EC-26 | Registrar médico con teléfono con formato especial (ej: "555-1001") | Aceptar y almacenar tal cual (mínimo 7 caracteres, sin transformar). |
+| EC-25 | Registrar médico con teléfono de menos de 7 dígitos | Rechazar con error de validación. |
+| EC-26 | Registrar médico con teléfono con formato especial (ej: "555-1001") | Rechazar por contener caracteres no numéricos. El frontend debe limpiar el formato antes de enviar. |
 
 ---
 
@@ -408,8 +408,8 @@ Tres médicos para carga inicial:
 - [ ] Se puede crear un médico con todos los campos obligatorios y el sistema asigna un UUID.
 - [ ] Se rechaza un médico con nombre de menos de 3 o más de 100 caracteres.
 - [ ] Se rechaza un médico sin especialidad.
-- [ ] El teléfono, si se proporciona, debe tener al menos 7 caracteres/dígitos.
-- [ ] El teléfono se almacena en el formato exacto recibido (no se transforma).
+- [ ] El teléfono, si se proporciona, debe tener al menos 7 dígitos.
+- [ ] El teléfono se almacena solo con dígitos (se eliminan automáticamente caracteres no numéricos).
 - [ ] El email, si se proporciona, debe tener formato válido.
 - [ ] Los campos opcionales (teléfono, email) pueden omitirse sin error.
 
@@ -420,7 +420,7 @@ Tres médicos para carga inicial:
 - [ ] Se rechaza un paciente sin documento de identidad.
 - [ ] Se rechaza un paciente con documento de identidad duplicado.
 - [ ] El documento de identidad debe tener al menos 7 caracteres.
-- [ ] El teléfono es obligatorio y debe tener al menos 7 dígitos.
+- [ ] El teléfono es obligatorio, solo dígitos, y debe tener al menos 7 caracteres.
 - [ ] El email es obligatorio y debe tener formato válido.
 - [ ] Si se proporciona fecha de nacimiento, no puede ser futura (RN-03).
 - [ ] Si no se proporciona fecha de nacimiento, se asume edad 0.
@@ -536,7 +536,7 @@ Las siguientes preguntas fueron planteadas durante el discovery y ya tienen resp
 | P-09 | ¿La reprogramación (RN-06) es un endpoint separado o es una combinación de cancelar + crear? | Funcionalmente es claro: cancelar + crear. La decisión de si es un endpoint dedicado o dos operaciones separadas queda para Planner. |
 | P-10 | ¿Las penalizaciones tienen fecha de expiración automática? | Funcionalmente es claro: conteo dinámico en ventana de 30 días hacia atrás desde la fecha de la nueva reserva. |
 | P-11 | ¿Se requiere algún ordenamiento por defecto en el listado de citas? | Detalle de diseño de API. Se sugiere por fecha descendente, pero queda para Planner. |
-| P-12 | ~~¿El teléfono del médico acepta solo dígitos o también caracteres como guiones?~~ | **Resuelto:** Se valida mínimo 7 caracteres/dígitos y se almacena el formato exacto recibido (no se transforma). |
+| P-12 | ~~¿El teléfono del médico acepta solo dígitos o también caracteres como guiones?~~ | **Resuelto:** Solo dígitos. La API rechaza caracteres no numéricos (pattern `^\d{7,20}$`). El backend sanitiza con `replaceAll("\\D", "")` como defensa en profundidad. El frontend debe encargarse del formateo visual. |
 
 ---
 
@@ -555,7 +555,7 @@ Las siguientes preguntas fueron planteadas durante el discovery y ya tienen resp
 | S-09 | El sistema opera en una sola zona horaria (la local del servidor). | No se menciona manejo de zonas horarias. |
 | S-10 | Las penalizaciones se calculan dinámicamente sobre la ventana de 30 días anteriores a la fecha de la nueva reserva. | Es la interpretación más natural de "en los últimos 30 días". |
 | S-11 | El umbral de 2 horas para penalización es inclusivo (`<= 2h`). | Responde P-06. |
-| S-12 | El teléfono del médico se almacena tal cual se recibe, sin transformar. | Responde P-12. |
+| S-12 | El teléfono se almacena solo con dígitos, sin guiones ni espacios. La API valida con `pattern: ^\d{7,20}$`. | Responde P-12. |
 
 ---
 

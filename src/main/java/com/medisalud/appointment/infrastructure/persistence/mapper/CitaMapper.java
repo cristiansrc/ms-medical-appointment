@@ -3,6 +3,7 @@ package com.medisalud.appointment.infrastructure.persistence.mapper;
 import com.medisalud.appointment.domain.model.Cita;
 import com.medisalud.appointment.infrastructure.persistence.entity.CitaEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CitaMapper {
@@ -22,5 +23,6 @@ public interface CitaMapper {
         );
     }
 
+    @Mapping(target = "isNew", ignore = true)
     CitaEntity toEntity(Cita domain);
 }

@@ -3,6 +3,7 @@ package com.medisalud.appointment.infrastructure.persistence.mapper;
 import com.medisalud.appointment.domain.model.Medico;
 import com.medisalud.appointment.infrastructure.persistence.entity.MedicoEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface MedicoMapper {
@@ -21,5 +22,6 @@ public interface MedicoMapper {
         );
     }
 
+    @Mapping(target = "isNew", ignore = true)
     MedicoEntity toEntity(Medico domain);
 }

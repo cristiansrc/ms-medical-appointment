@@ -143,56 +143,14 @@ public class CitaService implements CitaUseCase {
     @Override
     @Transactional
     public Cita reprogramar(UUID citaId, OffsetDateTime nuevaFechaHora) {
-        Cita citaOriginal = citaRepository.findById(citaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cita", citaId));
+        Cita citaOriginal = validarCitaExistenteYProgramada(citaId);
 
-        if (!"PROGRAMADA".equals(citaOriginal.getEstado())) {
-            throw new BusinessException("CITA_ALREADY_CANCELLED", "No se puede reprogramar una cita cancelada");
-        }
+        validarNuevaFranja(nuevaFechaHora);
 
-        // RN-01: Validar nueva franja
-        if (!ValidadorReglasNegocio.esFranjaHorariaValida(nuevaFechaHora)) {
-            throw new BusinessException("INVALID_SLOT", "La nueva fecha/hora no esta dentro del horario permitido");
-        }
-        if (!ValidadorReglasNegocio.esFranjaDe30Minutos(nuevaFechaHora)) {
-            throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos");
-        }
+        validarDisponibilidadMedicoYPaciente(citaOriginal.getMedicoId(), citaOriginal.getPacienteId(),
+                citaId, nuevaFechaHora);
 
-        // RN-01b: Validar que la nueva fecha no sea festivo (normalizado a hora Colombia)
-        LocalDate nuevaFechaLocal = nuevaFechaHora.withOffsetSameInstant(ValidadorReglasNegocio.getColombiaOffset()).toLocalDate();
-        if (festivoRepository.esFestivo(nuevaFechaLocal)) {
-            throw new BusinessException("INVALID_SLOT", "No se pueden agendar citas en dias festivos");
-        }
-
-        // RN-02: Validar medico disponible en la nueva franja (excluyendo la cita original)
-        OffsetDateTime finFranja = nuevaFechaHora.plusMinutes(FRANJA_MINUTOS);
-        List<Cita> citasMedico = citaRepository.findByMedicoIdAndFechaBetween(
-                citaOriginal.getMedicoId(), nuevaFechaHora, finFranja);
-        boolean medicoOcupado = citasMedico.stream()
-                .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
-        if (medicoOcupado) {
-            throw new ConflictException("MEDICO_SLOT_CONFLICT",
-                    "El medico no esta disponible en la nueva franja horaria");
-        }
-
-        // RN-04: Validar paciente disponible en la nueva franja (excluyendo la cita original)
-        List<Cita> citasPaciente = citaRepository.findByPacienteIdAndFechaBetween(
-                citaOriginal.getPacienteId(), nuevaFechaHora, finFranja);
-        boolean pacienteOcupado = citasPaciente.stream()
-                .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
-        if (pacienteOcupado) {
-            throw new ConflictException("PACIENTE_SLOT_CONFLICT",
-                    "El paciente ya tiene una cita en la nueva franja horaria");
-        }
-
-        // RN-05: Verificar bloqueo por penalizaciones (desde nueva fecha hacia atras 30 dias)
-        OffsetDateTime treintaDiasAtras = nuevaFechaHora.minusDays(30);
-        int penalizaciones = penalizacionRepository.countByPacienteIdAndFechaAfter(
-                citaOriginal.getPacienteId(), treintaDiasAtras);
-        if (ValidadorReglasNegocio.excedeLimitePenalizaciones(penalizaciones)) {
-            throw new BusinessException("PACIENTE_BLOCKED",
-                    "El paciente tiene " + penalizaciones + " cancelaciones tardias en los ultimos 30 dias. No puede reprogramar.");
-        }
+        verificarBloqueoPenalizaciones(citaOriginal.getPacienteId(), nuevaFechaHora);
 
         // RN-05: Aplicar penalización por cancelación de la cita original si es tardía
         boolean esTardia = ValidadorReglasNegocio.esCancelacionTardia(citaOriginal.getFechaHora());
@@ -202,11 +160,7 @@ public class CitaService implements CitaUseCase {
         citaRepository.save(citaOriginal);
 
         if (esTardia) {
-            RegistroPenalizacion penalizacion = new RegistroPenalizacion(
-                    UUID.randomUUID(), citaOriginal.getPacienteId(), citaId);
-            penalizacionRepository.save(penalizacion);
-            log.warn("Penalizacion registrada para paciente {} por reprogramacion tardia de cita {}",
-                    citaOriginal.getPacienteId(), citaId);
+            registrarPenalizacion(citaOriginal.getPacienteId(), citaId);
         }
 
         // Crear nueva cita
@@ -272,5 +226,66 @@ public class CitaService implements CitaUseCase {
     @Transactional(readOnly = true)
     public List<Cita> listarCitas(UUID medicoId, UUID pacienteId, String estado, LocalDate fechaInicio, LocalDate fechaFin) {
         return citaRepository.findAllWithFilters(medicoId, pacienteId, estado, fechaInicio, fechaFin);
+    }
+
+    private Cita validarCitaExistenteYProgramada(UUID citaId) {
+        Cita cita = citaRepository.findById(citaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cita", citaId));
+        if (!"PROGRAMADA".equals(cita.getEstado())) {
+            throw new BusinessException("CITA_ALREADY_CANCELLED", "No se puede reprogramar una cita cancelada");
+        }
+        return cita;
+    }
+
+    private void validarNuevaFranja(OffsetDateTime nuevaFechaHora) {
+        if (!ValidadorReglasNegocio.esFranjaHorariaValida(nuevaFechaHora)) {
+            throw new BusinessException("INVALID_SLOT", "La nueva fecha/hora no esta dentro del horario permitido");
+        }
+        if (!ValidadorReglasNegocio.esFranjaDe30Minutos(nuevaFechaHora)) {
+            throw new BusinessException("INVALID_SLOT", "Las citas solo se agendan en franjas de 30 minutos");
+        }
+        LocalDate nuevaFechaLocal = nuevaFechaHora
+                .withOffsetSameInstant(ValidadorReglasNegocio.getColombiaOffset()).toLocalDate();
+        if (festivoRepository.esFestivo(nuevaFechaLocal)) {
+            throw new BusinessException("INVALID_SLOT", "No se pueden agendar citas en dias festivos");
+        }
+    }
+
+    private void validarDisponibilidadMedicoYPaciente(UUID medicoId, UUID pacienteId, UUID citaId,
+                                                       OffsetDateTime nuevaFechaHora) {
+        OffsetDateTime finFranja = nuevaFechaHora.plusMinutes(FRANJA_MINUTOS);
+
+        List<Cita> citasMedico = citaRepository.findByMedicoIdAndFechaBetween(medicoId, nuevaFechaHora, finFranja);
+        boolean medicoOcupado = citasMedico.stream()
+                .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
+        if (medicoOcupado) {
+            throw new ConflictException("MEDICO_SLOT_CONFLICT",
+                    "El medico no esta disponible en la nueva franja horaria");
+        }
+
+        List<Cita> citasPaciente = citaRepository.findByPacienteIdAndFechaBetween(pacienteId, nuevaFechaHora, finFranja);
+        boolean pacienteOcupado = citasPaciente.stream()
+                .anyMatch(c -> "PROGRAMADA".equals(c.getEstado()) && !c.getId().equals(citaId));
+        if (pacienteOcupado) {
+            throw new ConflictException("PACIENTE_SLOT_CONFLICT",
+                    "El paciente ya tiene una cita en la nueva franja horaria");
+        }
+    }
+
+    private void verificarBloqueoPenalizaciones(UUID pacienteId, OffsetDateTime nuevaFechaHora) {
+        OffsetDateTime treintaDiasAtras = nuevaFechaHora.minusDays(30);
+        int penalizaciones = penalizacionRepository.countByPacienteIdAndFechaAfter(pacienteId, treintaDiasAtras);
+        if (ValidadorReglasNegocio.excedeLimitePenalizaciones(penalizaciones)) {
+            throw new BusinessException("PACIENTE_BLOCKED",
+                    "El paciente tiene " + penalizaciones + " cancelaciones tardias en los ultimos 30 dias. No puede reprogramar.");
+        }
+    }
+
+    private void registrarPenalizacion(UUID pacienteId, UUID citaId) {
+        RegistroPenalizacion penalizacion = new RegistroPenalizacion(
+                UUID.randomUUID(), pacienteId, citaId);
+        penalizacionRepository.save(penalizacion);
+        log.warn("Penalizacion registrada para paciente {} por reprogramacion tardia de cita {}",
+                pacienteId, citaId);
     }
 }

@@ -3,6 +3,7 @@ package com.medisalud.appointment.infrastructure.persistence.mapper;
 import com.medisalud.appointment.domain.model.RegistroPenalizacion;
 import com.medisalud.appointment.infrastructure.persistence.entity.PenalizacionEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PenalizacionMapper {
@@ -18,5 +19,6 @@ public interface PenalizacionMapper {
         );
     }
 
+    @Mapping(target = "isNew", ignore = true)
     PenalizacionEntity toEntity(RegistroPenalizacion domain);
 }

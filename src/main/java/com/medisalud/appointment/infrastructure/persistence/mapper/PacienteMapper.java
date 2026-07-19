@@ -23,5 +23,6 @@ public interface PacienteMapper {
     }
 
     @Mapping(target = "birthDate", source = "fechaNacimiento")
+    @Mapping(target = "isNew", ignore = true)
     PacienteEntity toEntity(Paciente domain);
 }

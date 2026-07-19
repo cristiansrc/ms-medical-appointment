@@ -7,6 +7,7 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 ## Tabla de Contenido
 
 - [Tecnologias](#tecnologias)
+- [Spec Driven Development](#spec-driven-development)
 - [Arquitectura](#arquitectura)
 - [Decisiones Tecnicas](#decisiones-tecnicas)
 - [Cobertura de Pruebas (JaCoCo)](#cobertura-de-pruebas-jacoco)
@@ -16,6 +17,30 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 - [Manejo de Errores](#manejo-de-errores)
 - [Despliegue en AWS](#despliegue-en-aws)
 - [Mejoras Propuestas](#mejoras-propuestas)
+
+## Spec Driven Development
+
+Este proyecto se desarrollo siguiendo la metodologia **Spec Driven Development (SDD)**, un enfoque donde las especificaciones detalladas son la fuente de verdad unica durante todo el ciclo de vida del desarrollo.
+
+### ¿Por que SDD?
+
+- **Base de conocimiento unificada:** Toda la informacion del proyecto (requerimientos, decisiones tecnicas, reglas de negocio, contratos API) esta documentada en archivos estructurados dentro del repositorio. Esto sirve como base de conocimiento tanto para desarrolladores humanos como para modelos de IA que necesiten familiarizarse con el proyecto.
+- **Planificacion estructurada:** Antes de escribir codigo, se definen los requerimientos (Requirements Brief), se disena la arquitectura y los contratos (Master Spec + OpenAPI), y se descomponen las tareas (Task Board). Esto reduce la ambiguedad y los errores de implementacion.
+- **Decisiones documentadas:** Cada decision tecnica y arquitectonica (D-01 a D-20) esta registrada en la Master Spec con su justificacion. Esto permite entender el "por que" detras de cada eleccion, no solo el "que".
+- **Desarrollo asistido por IA:** Durante la fase de implementacion, los agentes de IA utilizan estos documentos como parte de su contexto (prompt). Al tener toda la informacion disponible en archivos de documentacion, el agente puede concentrarse en escribir codigo que cumpla exactamente con lo especificado, sin necesidad de inferir decisiones no documentadas.
+
+### Archivos de documentacion en el repositorio
+
+| Archivo | Proposito |
+|---|---|
+| `docs/enunciado-prueba-java.pdf` | Enunciado original de la prueba tecnica (PDF). Define los requerimientos funcionales, reglas de negocio, stack tecnologico y entregables obligatorios. |
+| `docs/specs/requirements/medical-appointment-requirements-brief.md` | **Requirements Brief.** Analisis detallado de los requerimientos del PDF. Incluye alcance (RF-01 a RF-06), reglas de negocio (RN-01 a RN-06), entidades funcionales, edge cases, criterios de aceptacion, preguntas resueltas y supuestos. Es el insumo para el Planner. |
+| `docs/specs/master-spec.md` | **Master Spec.** Documento maestro que contiene: stack tecnologico, arquitectura hexagonal, modelo de datos completo, contratos de API (14 endpoints), estrategia de errores (ApiErrorResponse), reglas de negocio detalladas, integracion con Nager.Date, despliegue en AWS ECS, decisiones tecnicas (D-01 a D-20), criterios de aceptacion del incremento y mejoras propuestas. Es la fuente de verdad para la implementacion. |
+| `docs/specs/tasks/medical-appointment-task-board.md` | **Task Board.** Desglose de 37 tareas atomicas organizadas en 10 grupos (Setup, Dominio, Puertos, Persistencia, Servicios, Integracion, Web, Tests, CI/CD). Cada tarea incluye objetivo, alcance, criterios de aceptacion, dependencias y estado. |
+| `docs/specs/.working/medical-appointment-sdd-context.md` | **SDD Shared Context.** Contexto compartido que mantiene el estado actual del incremento, las decisiones tomadas durante la ejecucion y el handoff entre agentes. Se actualiza continuamente durante el desarrollo. |
+| `docs/specs/.working/medical-appointment-spec-validation.md` | **Validacion de especificacion.** Resultados de la validacion automatica de la Master Spec contra criterios de completitud, consistencia y ausencia de ambiguedad. |
+| `docs/specs/.working/medical-appointment-spec-revalidation.md` | **Revalidacion de especificacion.** Resultados de revalidaciones posteriores a correcciones de hallazgos identificados en la validacion inicial. |
+| `docs/api/openapi.yaml` | **Contrato OpenAPI 3.1.** Definicion completa de la API: 14 endpoints, schemas de request/response, codigos de error, ejemplos. Genera automaticamente las interfaces de los controladores y los DTOs via openapi-generator. |
 
 ---
 

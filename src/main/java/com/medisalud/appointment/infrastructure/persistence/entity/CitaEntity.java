@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.domain.Persistable;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -16,9 +17,8 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CitaEntity {
+public class CitaEntity implements Persistable<UUID> {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "paciente_id", nullable = false)
@@ -47,4 +47,19 @@ public class CitaEntity {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    @Transient
+    @Builder.Default
+    private boolean isNew = true;
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PrePersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
+    }
 }

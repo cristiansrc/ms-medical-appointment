@@ -8,6 +8,7 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 
 - [Tecnologias](#tecnologias)
 - [Arquitectura](#arquitectura)
+- [Decisiones Tecnicas](#decisiones-tecnicas)
 - [Cobertura de Pruebas (JaCoCo)](#cobertura-de-pruebas-jacoco)
 - [Tests](#tests)
 - [Instalacion y Ejecucion Local](#instalacion-y-ejecucion-local)
@@ -59,6 +60,56 @@ infrastructure (adaptadores: web, BD, clientes externos)
 - **Infrastructure** contiene los adaptadores: controladores REST, repositorios JPA, mapeadores, cliente HTTP (Nager.Date) y configuracion.
 - SOLID y DRY como principios rectores.
 - Virtual Threads habilitados para mejor throughput en operaciones de I/O.
+
+---
+
+## Decisiones Tecnicas
+
+### ¿Por que JPA / Hibernate?
+
+Se eligio JPA (Jakarta Persistence) con Hibernate como ORM porque:
+
+- **Productividad:** Mapeo automatico objeto-relacional que elimina la necesidad de escribir SQL repetitivo (CRUD basico). Las consultas personalizadas se definen con JPQL o Spring Data derived queries.
+- **Integracion con Spring Boot:** Spring Data JPA ofrece repositorios con metodos generados automaticamente (`findById`, `findAll`, `save`) y capacidad de definir consultas por nombre de metodo.
+- **Portabilidad:** Cambiar de base de datos (PostgreSQL → H2) solo requiere cambiar el dialecto y driver, sin modificar codigo de persistencia. Esto es clave para usar H2 en tests de integracion.
+- **Proteccion contra SQL injection:** Todas las consultas se construyen mediante JPQL parametrizado o Spring Data derived queries, eliminando el riesgo de concatenacion manual de SQL.
+
+### ¿Por que Flyway?
+
+Flyway se eligio para gestion de migraciones de base de datos porque:
+
+- **Versionado explicito:** Cada migracion es un archivo SQL con numero de version (V1.0.1, V1.0.2, etc.) que se aplica en orden y solo una vez.
+- **Estado deterministico:** El schema de la base de datos queda reflejado en el codigo fuente. Cualquier entorno (local, test, produccion) obtiene exactamente el mismo schema.
+- **Integracion con JPA + ddl-auto=validate:** Flyway crea las tablas y JPA valida que las entidades coincidan con el schema existente. Esto evita desincronizaciones entre el codigo y la base de datos.
+- **Rollback implicito:** Como cada migracion es incremental y esta versionada, reconstruir una base de datos desde cero ejecuta todas las migraciones en orden.
+
+### ¿Por que API Design First con OpenAPI?
+
+Se adopto el enfoque **API Design First** (primero el contrato, luego la implementacion) porque:
+
+- **Contrato como fuente de verdad:** El archivo `docs/api/openapi.yaml` define el contrato de la API (endpoints, schemas, codigos de error) antes de escribir cualquier codigo. Esto garantiza que la implementacion respete el diseno acordado.
+- **Generacion automatica de interfaces:** OpenAPI Generator (plugin de Gradle) genera las interfaces de los controladores y los DTOs a partir del contrato. Esto elimina errores de tipeo en nombres de campos y endpoints, y asegura consistencia entre la documentacion y el codigo.
+- **Documentacion viva:** El mismo contrato OpenAPI alimenta Swagger UI, que ofrece documentacion interactiva actualizada automaticamente.
+- **Facilidad para evolucion:** Cambiar un endpoint solo requiere modificar el contrato y regenerar. Los errores de compilacion aparecen si la implementacion no coincide con el contrato.
+
+**Flujo de trabajo:**
+
+```
+editar openapi.yaml → ./gradlew build (genera interfaces) → implementar interfaces en controllers
+```
+
+Las interfaces se generan automaticamente con Gradle en cada build (tarea `openApiGenerate`). No se versionan en el repositorio (estan en `build/generated/`).
+
+### ¿Por que @RestControllerAdvice (GlobalExceptionHandler)?
+
+Se creo un manejador global de excepciones con `@RestControllerAdvice` porque:
+
+- **Consistencia en errores:** Todas las respuestas de error siguen el mismo formato `ApiErrorResponse` con los campos `timestamp`, `status`, `error`, `code`, `message`, `path`, `trace_id` y `details`. Sin un handler global, cada controlador podria devolver errores en formatos distintos.
+- **Separacion de concerns:** La logica de mapeo excepcion → codigo HTTP esta centralizada en un solo lugar, no dispersa en los controladores. Las excepciones de dominio (`BusinessException`, `ConflictException`, `ResourceNotFoundException`) solo contienen el codigo de error y el mensaje; el handler decide el status HTTP.
+- **Cobertura total:** Cualquier excepcion no esperada es capturada por el handler generico (`Exception.class`) que devuelve 500 Internal Server Error sin exponer detalles internos.
+- **Trace ID:** Cada error incluye un `trace_id` unico (UUID) que permite correlacionar errores en los logs sin exponer informacion sensible.
+
+---
 
 ---
 

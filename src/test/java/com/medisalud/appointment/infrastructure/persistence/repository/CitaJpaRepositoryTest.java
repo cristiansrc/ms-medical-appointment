@@ -24,6 +24,7 @@ class CitaJpaRepositoryTest {
         OffsetDateTime ahora = OffsetDateTime.now();
 
         CitaEntity cita = new CitaEntity();
+        cita.setId(UUID.randomUUID());
         cita.setMedicoId(medicoId);
         cita.setPacienteId(UUID.randomUUID());
         cita.setFechaHora(ahora);
@@ -42,6 +43,7 @@ class CitaJpaRepositoryTest {
         OffsetDateTime ahora = OffsetDateTime.now();
 
         CitaEntity cita = new CitaEntity();
+        cita.setId(UUID.randomUUID());
         cita.setMedicoId(medicoId);
         cita.setPacienteId(UUID.randomUUID());
         cita.setFechaHora(ahora);

@@ -32,13 +32,13 @@ class PacienteControllerTest {
     @DisplayName("POST /api/v1/pacientes crea paciente exitosamente")
     void should_CreatePaciente_when_ValidRequest() throws Exception {
         Paciente paciente = new Paciente(UUID.randomUUID(), "Paciente Test", "12345678",
-                "555-0000", "test@test.com", LocalDate.of(1990, 1, 1));
+                "5550000", "test@test.com", LocalDate.of(1990, 1, 1));
         when(pacienteUseCase.crear(any(), any(), any(), any(), any())).thenReturn(paciente);
 
         mockMvc.perform(post("/api/v1/pacientes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre_completo\":\"Paciente Test\",\"documento_identidad\":\"12345678\","
-                                + "\"telefono\":\"555-0000\",\"email\":\"test@test.com\"}"))
+                                + "\"telefono\":\"5550000\",\"email\":\"test@test.com\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"));
     }
@@ -48,7 +48,7 @@ class PacienteControllerTest {
     void should_GetPaciente_when_Exists() throws Exception {
         UUID id = UUID.randomUUID();
         Paciente paciente = new Paciente(id, "Paciente Test", "12345678",
-                "555-0000", "test@test.com", LocalDate.of(1990, 1, 1));
+                "5550000", "test@test.com", LocalDate.of(1990, 1, 1));
         when(pacienteUseCase.obtenerPorId(id)).thenReturn(paciente);
 
         mockMvc.perform(get("/api/v1/pacientes/" + id)
@@ -61,7 +61,7 @@ class PacienteControllerTest {
     @DisplayName("GET /api/v1/pacientes retorna lista de pacientes")
     void should_ListPacientes_when_Any() throws Exception {
         Paciente paciente = new Paciente(UUID.randomUUID(), "Paciente Test", "12345678",
-                "555-0000", "test@test.com", LocalDate.of(1990, 1, 1));
+                "5550000", "test@test.com", LocalDate.of(1990, 1, 1));
         when(pacienteUseCase.listarTodos()).thenReturn(List.of(paciente));
 
         mockMvc.perform(get("/api/v1/pacientes")
@@ -75,13 +75,13 @@ class PacienteControllerTest {
     void should_UpdatePaciente_when_ValidRequest() throws Exception {
         UUID id = UUID.randomUUID();
         Paciente paciente = new Paciente(id, "Paciente Actualizado", "12345678",
-                "555-0000", "actualizado@test.com", LocalDate.of(1990, 1, 1));
+                "5550000", "actualizado@test.com", LocalDate.of(1990, 1, 1));
         when(pacienteUseCase.actualizar(any(), any(), any(), any(), any())).thenReturn(paciente);
 
         mockMvc.perform(put("/api/v1/pacientes/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre_completo\":\"Paciente Actualizado\",\"documento_identidad\":\"12345678\","
-                                + "\"telefono\":\"555-0000\",\"email\":\"actualizado@test.com\"}"))
+                                + "\"telefono\":\"5550000\",\"email\":\"actualizado@test.com\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre_completo").value("Paciente Actualizado"));
     }

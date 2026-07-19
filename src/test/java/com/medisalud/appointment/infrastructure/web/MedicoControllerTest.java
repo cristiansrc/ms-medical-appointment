@@ -34,7 +34,7 @@ class MedicoControllerTest {
     @Test
     @DisplayName("GET /api/v1/medicos retorna lista")
     void listMedicos() throws Exception {
-        Medico medico = new Medico(UUID.randomUUID(), "Dr. Test", "Cardiologia", "555-0000", "test@test.com");
+        Medico medico = new Medico(UUID.randomUUID(), "Dr. Test", "Cardiologia", "5550000", "test@test.com");
         when(medicoUseCase.listarTodos()).thenReturn(List.of(medico));
 
         mockMvc.perform(get("/api/v1/medicos")
@@ -46,7 +46,7 @@ class MedicoControllerTest {
     @Test
     @DisplayName("POST /api/v1/medicos crea medico")
     void createMedico() throws Exception {
-        Medico medico = new Medico(UUID.randomUUID(), "Dr. Test", "Cardiologia", "555-0000", "test@test.com");
+        Medico medico = new Medico(UUID.randomUUID(), "Dr. Test", "Cardiologia", "5550000", "test@test.com");
         when(medicoUseCase.crear(any(), any(), any(), any())).thenReturn(medico);
 
         mockMvc.perform(post("/api/v1/medicos")
@@ -60,7 +60,7 @@ class MedicoControllerTest {
     @DisplayName("GET /api/v1/medicos/{id} retorna medico")
     void should_GetMedico_when_Exists() throws Exception {
         UUID id = UUID.randomUUID();
-        Medico medico = new Medico(id, "Dr. Test", "Cardiologia", "555-0000", "test@test.com");
+        Medico medico = new Medico(id, "Dr. Test", "Cardiologia", "5550000", "test@test.com");
         when(medicoUseCase.obtenerPorId(id)).thenReturn(medico);
 
         mockMvc.perform(get("/api/v1/medicos/{id}", id)
@@ -74,16 +74,16 @@ class MedicoControllerTest {
     @DisplayName("PUT /api/v1/medicos/{id} actualiza medico")
     void should_UpdateMedico_when_ValidRequest() throws Exception {
         UUID id = UUID.randomUUID();
-        Medico medicoActualizado = new Medico(id, "Dra. Updated", "Dermatologia", "555-1111", "updated@test.com");
+        Medico medicoActualizado = new Medico(id, "Dra. Updated", "Dermatologia", "5551111", "updated@test.com");
         when(medicoUseCase.actualizar(eq(id), any(), any(), any(), any())).thenReturn(medicoActualizado);
 
         mockMvc.perform(put("/api/v1/medicos/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre_completo\":\"Dra. Updated\",\"especialidad\":\"Dermatologia\",\"telefono\":\"555-1111\",\"email\":\"updated@test.com\"}"))
+                        .content("{\"nombre_completo\":\"Dra. Updated\",\"especialidad\":\"Dermatologia\",\"telefono\":\"5551111\",\"email\":\"updated@test.com\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre_completo").value("Dra. Updated"))
                 .andExpect(jsonPath("$.especialidad").value("Dermatologia"))
-                .andExpect(jsonPath("$.telefono").value("555-1111"))
+                .andExpect(jsonPath("$.telefono").value("5551111"))
                 .andExpect(jsonPath("$.email").value("updated@test.com"));
     }
 }

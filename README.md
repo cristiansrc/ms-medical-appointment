@@ -273,10 +273,9 @@ docker run -p 8081:8081 --env-file .env ms-medical-appointment
 {
   "nombre_completo": "Dr. Juan Perez",
   "especialidad": "Cardiologia",
-  "telefono": "555-2001",
+  "telefono": "5552001",
   "email": "juan.perez@medisalud.com"
 }
-```
 
 **Response (201 Created):**
 ```json
@@ -284,7 +283,7 @@ docker run -p 8081:8081 --env-file .env ms-medical-appointment
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "nombre_completo": "Dr. Juan Perez",
   "especialidad": "Cardiologia",
-  "telefono": "555-2001",
+  "telefono": "5552001",
   "email": "juan.perez@medisalud.com",
   "activo": true,
   "created_at": "2026-07-18T10:00:00Z",

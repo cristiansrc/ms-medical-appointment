@@ -129,7 +129,7 @@ class ValidadorReglasNegocioTest {
         @Test
         @DisplayName("Reprogramacion con fecha valida")
         void esReprogramacionValida_conFechaValida() {
-            OffsetDateTime fechaValida = OffsetDateTime.now().plusDays(2)
+            OffsetDateTime fechaValida = OffsetDateTime.now(ZoneOffset.ofHours(-5)).plusDays(2)
                     .withHour(10).withMinute(0).withSecond(0).withNano(0);
             assertTrue(ValidadorReglasNegocio.esReprogramacionValida(fechaValida));
         }
@@ -165,7 +165,7 @@ class ValidadorReglasNegocioTest {
         @Test
         @DisplayName("Reprogramacion con hora fuera del horario permitido")
         void esReprogramacionValida_conHoraInvalida() {
-            OffsetDateTime fechaFueraHorario = OffsetDateTime.now().plusDays(2)
+            OffsetDateTime fechaFueraHorario = OffsetDateTime.now(ZoneOffset.ofHours(-5)).plusDays(2)
                     .withHour(18).withMinute(0).withSecond(0).withNano(0);
             assertFalse(ValidadorReglasNegocio.esReprogramacionValida(fechaFueraHorario));
         }

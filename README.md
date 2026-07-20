@@ -15,7 +15,8 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 - [Instalacion y Ejecucion Local](#instalacion-y-ejecucion-local)
 - [Endpoints y Ejemplos](#endpoints-y-ejemplos)
 - [Manejo de Errores](#manejo-de-errores)
-- [Despliegue en AWS](#despliegue-en-aws)
+- [Infraestructura (AWS/GitHub) y Despliegue Automatico (CI/CD)](#infraestructura-awsgithub-y-despliegue-automatico-cicd)
+- [URL de AWS](#url-de-aws)
 - [Mejoras Propuestas](#mejoras-propuestas)
 
 ## Spec Driven Development
@@ -61,7 +62,7 @@ Este proyecto se desarrollo siguiendo la metodologia **Spec Driven Development (
 | ArchUnit | 1.3.x |
 | JaCoCo | 0.8.12 |
 | Docker | - |
-| AWS ECS Fargate | - |
+| AWS Elastic Beanstalk (EC2 + RDS PostgreSQL) | - |
 
 ---
 
@@ -287,9 +288,11 @@ createdb ms-medical-appointment
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
-5. La API estara disponible en: `http://localhost:8081`
-6. Swagger UI: `http://localhost:8081/swagger-ui/index.html`
-7. Health check: `http://localhost:8081/actuator/health`
+5. La API estara disponible en: `http://localhost:8080`
+6. Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+7. Health check: `http://localhost:8080/actuator/health`
+
+> **Nota:** En AWS la aplicacion corre internamente en el puerto `5000` (configurado via `PORT=5000`), y Nginx de Elastic Beanstalk enruta el trafico HTTP (80/443) hacia ese puerto.
 
 ### Ejecutar tests
 
@@ -301,7 +304,7 @@ createdb ms-medical-appointment
 
 ```bash
 docker build -t ms-medical-appointment .
-docker run -p 8081:8081 --env-file .env ms-medical-appointment
+docker run -p 8080:8080 --env-file .env ms-medical-appointment
 ```
 
 ---
@@ -476,19 +479,42 @@ Todas las respuestas de error siguen el formato estandar `ApiErrorResponse`:
 
 ---
 
-## Despliegue en AWS
+## Infraestructura (AWS/GitHub) y Despliegue Automatico (CI/CD)
 
-La aplicacion esta desplegada en **AWS ECS Fargate** con el siguiente stack:
+El proyecto cuenta con un flujo completo de **Integracion y Despliegue Continuo (CI/CD)** automatizado desde la rama principal `main` hacia la nube de **AWS**.
 
-```
-Cliente HTTPS → ALB (HTTPS/443) → ECS Fargate → RDS PostgreSQL
-```
+### 🛠️ Arquitectura en AWS
 
-**CI/CD:** GitHub Actions — build → test → push a ECR → deploy a ECS.
+* **PaaS:** AWS Elastic Beanstalk (plataforma Corretto 21 sobre Amazon Linux 2023).
+* **Database:** Amazon RDS PostgreSQL 18.3, configurada con acceso en la misma VPC y reglas de entrada en el puerto `5432`.
+* **Proxy Inverso:** Nginx interno de Beanstalk enrutando el trafico HTTP hacia el puerto `5000` de la aplicacion Spring Boot.
+* **Integracion Externa:** Salida nativa a Internet desde la instancia EC2 para el consumo de la API de festivos (`date.nager.at`).
 
-**Perfil de produccion:** `aws` — usa variables de entorno para configurar base de datos, logging estructurado en JSON para CloudWatch, health checks con Kubernetes probes y desactivacion de Swagger UI.
+---
 
-**Pendiente:** Configurar dominio personalizado y certificado SSL.
+### ⚙️ Pipeline de GitHub Actions
+
+Cada `git push` o *merge* a la rama `main` dispara automaticamente un *workflow* en GitHub Actions que ejecuta los siguientes pasos de forma secuencial:
+
+1. **Checkout & JDK Setup:** Clona el codigo fuente y configura el entorno Java 21 (Corretto).
+2. **Quality Gate (Tests):** Ejecuta `./gradlew test` para validar la suite de pruebas unitarias. Si alguna prueba falla, el despliegue se detiene automaticamente.
+3. **Build:** Compila el ejecutable empaquetado con `./gradlew bootJar`.
+4. **Deploy to AWS:** Utiliza el SDK de AWS (`beanstalk-deploy`) autenticado mediante variables de entorno seguras (`AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY`) para desplegar la nueva version del JAR en Elastic Beanstalk de forma transparente y sin caida del servicio.
+
+---
+
+### 🗄️ Base de Datos & Migraciones Automaticas
+
+* **Flyway DB:** Se encarga del versionamiento automatico del esquema de la base de datos al arrancar el microservicio.
+* **Versionado:** Aplica de manera secuencial 9 migraciones SQL (`V1.0.1` a `V1.0.9`), gestionando la creacion de tablas (`medicos`, `pacientes`, `citas`, `penalizaciones`, `festivos`), triggers de auditoria (`updated_at`) y datos de prueba (*seeds*).
+
+---
+
+### 🌐 URL de AWS
+
+**Produccion:** [http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com](http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com)
+
+> **Nota:** Pendiente configurar dominio personalizado y certificado SSL.
 
 ---
 

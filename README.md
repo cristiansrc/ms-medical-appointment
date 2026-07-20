@@ -478,15 +478,15 @@ Todas las respuestas de error siguen el formato estandar `ApiErrorResponse`:
 
 ## Despliegue en AWS
 
-La aplicacion esta desplegada en **AWS ECS Fargate** con el siguiente stack:
+La aplicacion esta desplegada en **AWS Elastic Beanstalk** con el siguiente stack:
 
 ```
-Cliente HTTPS → ALB (HTTPS/443) → ECS Fargate → RDS PostgreSQL
+Cliente HTTPS → ALB (HTTPS/443) → Elastic Beanstalk → RDS PostgreSQL
 ```
 
-**CI/CD:** GitHub Actions — build → test → push a ECR → deploy a ECS.
+**URL base:** [http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com](http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com)
 
-**Perfil de produccion:** `aws` — usa variables de entorno para configurar base de datos, logging estructurado en JSON para CloudWatch, health checks con Kubernetes probes y desactivacion de Swagger UI.
+**CI/CD:** GitHub Actions — build → test → deploy.
 
 **Pendiente:** Configurar dominio personalizado y certificado SSL.
 

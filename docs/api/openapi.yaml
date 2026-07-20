@@ -9,8 +9,10 @@ info:
     name: MediSalud Dev Team
 
 servers:
-  - url: http://localhost:8081
-    description: Local development server
+  - url: http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com
+    description: Produccion (AWS Elastic Beanstalk)
+  - url: http://localhost:8080
+    description: Desarrollo local
 
 tags:
   - name: Medicos

@@ -15,7 +15,7 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 - [Instalacion y Ejecucion Local](#instalacion-y-ejecucion-local)
 - [Endpoints y Ejemplos](#endpoints-y-ejemplos)
 - [Manejo de Errores](#manejo-de-errores)
-- [Infraestructura y Despliegue Automatico (CI/CD)](#infraestructura-y-despliegue-automatico-cicd)
+- [Infraestructura (AWS/GitHub) y Despliegue Automatico (CI/CD)](#infraestructura-awsgithub-y-despliegue-automatico-cicd)
 - [Mejoras Propuestas](#mejoras-propuestas)
 
 ## Spec Driven Development
@@ -476,7 +476,7 @@ Todas las respuestas de error siguen el formato estandar `ApiErrorResponse`:
 
 ---
 
-## 🚀 Infraestructura y Despliegue Automatico (CI/CD)
+## Infraestructura (AWS/GitHub) y Despliegue Automatico (CI/CD)
 
 El proyecto cuenta con un flujo completo de **Integracion y Despliegue Continuo (CI/CD)** automatizado desde la rama principal `main` hacia la nube de **AWS**.
 

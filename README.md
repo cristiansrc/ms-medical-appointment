@@ -16,6 +16,7 @@ API REST para agendar citas medicas con validacion de reglas de negocio, gestion
 - [Endpoints y Ejemplos](#endpoints-y-ejemplos)
 - [Manejo de Errores](#manejo-de-errores)
 - [Infraestructura (AWS/GitHub) y Despliegue Automatico (CI/CD)](#infraestructura-awsgithub-y-despliegue-automatico-cicd)
+- [URL de AWS](#url-de-aws)
 - [Mejoras Propuestas](#mejoras-propuestas)
 
 ## Spec Driven Development
@@ -505,7 +506,13 @@ Cada `git push` o *merge* a la rama `main` dispara automaticamente un *workflow*
 * **Flyway DB:** Se encarga del versionamiento automatico del esquema de la base de datos al arrancar el microservicio.
 * **Versionado:** Aplica de manera secuencial 9 migraciones SQL (`V1.0.1` a `V1.0.9`), gestionando la creacion de tablas (`medicos`, `pacientes`, `citas`, `penalizaciones`, `festivos`), triggers de auditoria (`updated_at`) y datos de prueba (*seeds*).
 
-**URL base:** [http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com](http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com)
+---
+
+### 🌐 URL de AWS
+
+**Produccion:** [http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com](http://ms-medical-appointment-env.eba-meriebhu.us-east-2.elasticbeanstalk.com)
+
+> **Nota:** Pendiente configurar dominio personalizado y certificado SSL.
 
 ---
 

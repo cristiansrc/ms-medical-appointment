@@ -8,3 +8,5 @@ gradlew.bat
 .vscode/
 *.log
 .env
+
+*.kate-swp

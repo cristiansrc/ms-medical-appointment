@@ -62,7 +62,7 @@ Este proyecto se desarrollo siguiendo la metodologia **Spec Driven Development (
 | ArchUnit | 1.3.x |
 | JaCoCo | 0.8.12 |
 | Docker | - |
-| AWS ECS Fargate | - |
+| AWS Elastic Beanstalk (EC2 + RDS PostgreSQL) | - |
 
 ---
 
@@ -288,9 +288,11 @@ createdb ms-medical-appointment
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
-5. La API estara disponible en: `http://localhost:8081`
-6. Swagger UI: `http://localhost:8081/swagger-ui/index.html`
-7. Health check: `http://localhost:8081/actuator/health`
+5. La API estara disponible en: `http://localhost:8080`
+6. Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+7. Health check: `http://localhost:8080/actuator/health`
+
+> **Nota:** En AWS la aplicacion corre internamente en el puerto `5000` (configurado via `PORT=5000`), y Nginx de Elastic Beanstalk enruta el trafico HTTP (80/443) hacia ese puerto.
 
 ### Ejecutar tests
 
@@ -302,7 +304,7 @@ createdb ms-medical-appointment
 
 ```bash
 docker build -t ms-medical-appointment .
-docker run -p 8081:8081 --env-file .env ms-medical-appointment
+docker run -p 8080:8080 --env-file .env ms-medical-appointment
 ```
 
 ---
